@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>deepinv.models.wavdict &mdash; deepinverse 0.1 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/sg_gallery-rendered-html.css" type="text/css" />
+    <link rel="shortcut icon" href="../../../_static/logo.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../../_static/documentation_options.js?v=2709fde1"></script>
+        <script src="../../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../../index.html">
+            
+              <img src="../../../_static/deepinv_logolarge.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../deepinv.physics.html">Physics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deepinv.datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deepinv.utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deepinv.models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deepinv.loss.html">Loss</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deepinv.optim.html">Optim</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deepinv.pnp.html">PnP and RED algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deepinv.unfolded.html">Unfolded algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deepinv.sampling.html">Sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../auto_examples/index.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deepinv.notation.html">Math Notation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../deepinv.contributing.html">How to Contribute</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">deepinverse</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">deepinv.models.wavdict</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for deepinv.models.wavdict</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
+
+
+<div class="viewcode-block" id="WaveletPrior">
+<a class="viewcode-back" href="../../../stubs/deepinv.models.WaveletPrior.html#deepinv.models.WaveletPrior">[docs]</a>
+<span class="k">class</span> <span class="nc">WaveletPrior</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wavelet denoising with the :math:`\ell_1` norm.</span>
+
+
+<span class="sd">    This denoiser is defined as the solution to the optimization problem:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \underset{x}{\arg\min} \;  \|x-y\|^2 + \lambda \|\Psi x\|_n</span>
+
+<span class="sd">    where :math:`\Psi` is an orthonormal wavelet transform, :math:`\lambda&gt;0` is a hyperparameter, and where</span>
+<span class="sd">    :math:`\|\cdot\|_n` is either the :math:`\ell_1` norm (``non_linearity=&quot;soft&quot;``) or</span>
+<span class="sd">    the :math:`\ell_0` norm (``non_linearity=&quot;hard&quot;``). A variant of the :math:`\ell_0` norm is also available</span>
+<span class="sd">    (``non_linearity=&quot;topk&quot;``), where the thresholding is done by keeping the :math:`k` largest coefficients</span>
+<span class="sd">    in each wavelet subband and setting the others to zero.</span>
+
+<span class="sd">    The solution is available in closed-form, thus the denoiser is cheap to compute.</span>
+
+<span class="sd">    :param int level: decomposition level of the wavelet transform</span>
+<span class="sd">    :param str wv: mother wavelet (follows the `PyWavelets convention</span>
+<span class="sd">        &lt;https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html&gt;`_) (default: &quot;db8&quot;)</span>
+<span class="sd">    :param str device: cpu or gpu</span>
+<span class="sd">    :param str non_linearity: ``&quot;soft&quot;``, ``&quot;hard&quot;`` or ``&quot;topk&quot;`` thresholding (default: ``&quot;soft&quot;``).</span>
+<span class="sd">        If ``&quot;topk&quot;``, only the top-k wavelet coefficients are kept.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">wv</span><span class="o">=</span><span class="s2">&quot;db8&quot;</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">non_linearity</span><span class="o">=</span><span class="s2">&quot;soft&quot;</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="kn">from</span> <span class="nn">pytorch_wavelets</span> <span class="kn">import</span> <span class="n">DWTForward</span><span class="p">,</span> <span class="n">DWTInverse</span>
+        <span class="k">except</span> <span class="ne">ImportError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span>
+                <span class="s2">&quot;pywavelets is needed to use the WaveletPrior class. &quot;</span>
+                <span class="s2">&quot;It should be installed with `pip install&quot;</span>
+                <span class="s2">&quot;git+https://github.com/fbcotter/pytorch_wavelets.git`&quot;</span>
+            <span class="p">)</span>
+            <span class="k">raise</span> <span class="n">e</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dwt</span> <span class="o">=</span> <span class="n">DWTForward</span><span class="p">(</span><span class="n">J</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="p">,</span> <span class="n">wave</span><span class="o">=</span><span class="n">wv</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iwt</span> <span class="o">=</span> <span class="n">DWTInverse</span><span class="p">(</span><span class="n">wave</span><span class="o">=</span><span class="n">wv</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">device</span> <span class="o">=</span> <span class="n">device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">non_linearity</span> <span class="o">=</span> <span class="n">non_linearity</span>
+
+    <span class="k">def</span> <span class="nf">get_ths_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ths</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ths</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ths</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">ths_map</span> <span class="o">=</span> <span class="n">ths</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">ths</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">ths</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">ths_map</span> <span class="o">=</span> <span class="n">ths</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ths_map</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">ths</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">ths_map</span>
+
+<div class="viewcode-block" id="WaveletPrior.prox_l1">
+<a class="viewcode-back" href="../../../stubs/deepinv.models.WaveletPrior.html#deepinv.models.WaveletPrior.prox_l1">[docs]</a>
+    <span class="k">def</span> <span class="nf">prox_l1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">ths</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Soft thresholding of the wavelet coefficients.</span>
+
+<span class="sd">        :param torch.Tensor x: wavelet coefficients.</span>
+<span class="sd">        :param float, torch.Tensor ths: threshold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ths_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ths_map</span><span class="p">(</span><span class="n">ths</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="n">x</span> <span class="o">-</span> <span class="n">ths_map</span>
+        <span class="p">)</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">type</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">),</span> <span class="n">x</span> <span class="o">+</span> <span class="n">ths_map</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WaveletPrior.prox_l0">
+<a class="viewcode-back" href="../../../stubs/deepinv.models.WaveletPrior.html#deepinv.models.WaveletPrior.prox_l0">[docs]</a>
+    <span class="k">def</span> <span class="nf">prox_l0</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">ths</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Hard thresholding of the wavelet coefficients.</span>
+
+<span class="sd">        :param torch.Tensor x: wavelet coefficients.</span>
+<span class="sd">        :param float, torch.Tensor ths: threshold.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ths</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+            <span class="n">ths_map</span> <span class="o">=</span> <span class="n">ths</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ths_map</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ths_map</span><span class="p">(</span><span class="n">ths</span><span class="p">)</span>
+            <span class="n">ths_map</span> <span class="o">=</span> <span class="n">ths_map</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span>
+                <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="p">)</span>  <span class="c1"># Reshaping to image wavelet shape</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="n">out</span><span class="p">[</span><span class="nb">abs</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">ths_map</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="n">out</span></div>
+
+
+<div class="viewcode-block" id="WaveletPrior.hard_threshold_topk">
+<a class="viewcode-back" href="../../../stubs/deepinv.models.WaveletPrior.html#deepinv.models.WaveletPrior.hard_threshold_topk">[docs]</a>
+    <span class="k">def</span> <span class="nf">hard_threshold_topk</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">ths</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Hard thresholding of the wavelet coefficients by keeping only the top-k coefficients and setting the others to</span>
+<span class="sd">        0.</span>
+
+<span class="sd">        :param torch.Tensor x: wavelet coefficients.</span>
+<span class="sd">        :param float, int ths: top k coefficients to keep. If ``float``, it is interpreted as a proportion of the total</span>
+<span class="sd">            number of coefficients. If ``int``, it is interpreted as the number of coefficients to keep.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ths</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ths</span> <span class="o">*</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">k</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ths</span><span class="p">)</span>
+
+        <span class="c1"># Reshape arrays to 2D and initialize output to 0</span>
+        <span class="n">x_flat</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x_flat</span><span class="p">)</span>
+
+        <span class="n">topk_indices_flat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">x_flat</span><span class="p">),</span> <span class="n">k</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Convert the flattened indices to the original indices of x</span>
+        <span class="n">batch_indices</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">topk_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">batch_indices</span><span class="p">,</span> <span class="n">topk_indices_flat</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c1"># Set output&#39;s top-k elements to values from original x</span>
+        <span class="n">out</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">topk_indices</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">())]</span> <span class="o">=</span> <span class="n">x_flat</span><span class="p">[</span>
+            <span class="nb">tuple</span><span class="p">(</span><span class="n">topk_indices</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">())</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="WaveletPrior.forward">
+<a class="viewcode-back" href="../../../stubs/deepinv.models.WaveletPrior.html#deepinv.models.WaveletPrior.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">ths</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run the model on a noisy image.</span>
+
+<span class="sd">        :param torch.Tensor x: noisy image.</span>
+<span class="sd">        :param int, float, torch.Tensor ths: thresholding parameter.</span>
+<span class="sd">            If ``non_linearity`` equals ``&quot;soft&quot;`` or ``&quot;hard&quot;``, ``ths`` serves as a (soft or hard)</span>
+<span class="sd">            thresholding parameter for the wavelet coefficients. If ``non_linearity`` equals ``&quot;topk&quot;``,</span>
+<span class="sd">            ``ths`` can indicate the number of wavelet coefficients</span>
+<span class="sd">            that are kept (if ``int``) or the proportion of coefficients that are kept (if ``float``).</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">size</span><span class="p">()[</span><span class="o">-</span><span class="mi">2</span><span class="p">:]</span>
+        <span class="n">padding_bottom</span> <span class="o">=</span> <span class="n">h</span> <span class="o">%</span> <span class="mi">2</span>
+        <span class="n">padding_right</span> <span class="o">=</span> <span class="n">w</span> <span class="o">%</span> <span class="mi">2</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ReplicationPad2d</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">padding_right</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">padding_bottom</span><span class="p">))(</span><span class="n">x</span><span class="p">)</span>
+
+        <span class="n">coeffs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dwt</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">level</span><span class="p">):</span>
+            <span class="n">ths_cur</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">ths</span>
+                <span class="k">if</span> <span class="p">(</span>
+                    <span class="nb">isinstance</span><span class="p">(</span><span class="n">ths</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ths</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">ths</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+                    <span class="ow">or</span> <span class="n">ths</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+                <span class="p">)</span>
+                <span class="k">else</span> <span class="n">ths</span><span class="p">[</span><span class="n">l</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">non_linearity</span> <span class="o">==</span> <span class="s2">&quot;soft&quot;</span><span class="p">:</span>
+                <span class="n">coeffs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prox_l1</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">l</span><span class="p">],</span> <span class="n">ths_cur</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">non_linearity</span> <span class="o">==</span> <span class="s2">&quot;hard&quot;</span><span class="p">:</span>
+                <span class="n">coeffs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prox_l0</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">l</span><span class="p">],</span> <span class="n">ths_cur</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">non_linearity</span> <span class="o">==</span> <span class="s2">&quot;topk&quot;</span><span class="p">:</span>
+                <span class="n">coeffs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">l</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hard_threshold_topk</span><span class="p">(</span><span class="n">coeffs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">l</span><span class="p">],</span> <span class="n">ths_cur</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">iwt</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span>
+
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">h</span><span class="p">,</span> <span class="p">:</span><span class="n">w</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">y</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="WaveletDict">
+<a class="viewcode-back" href="../../../stubs/deepinv.models.WaveletDict.html#deepinv.models.WaveletDict">[docs]</a>
+<span class="k">class</span> <span class="nc">WaveletDict</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Overcomplete Wavelet denoising with the :math:`\ell_1` norm.</span>
+
+<span class="sd">    This denoiser is defined as the solution to the optimization problem:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        \underset{x}{\arg\min} \;  \|x-y\|^2 + \lambda \|\Psi x\|_n</span>
+
+<span class="sd">    where :math:`\Psi` is an overcomplete wavelet transform, composed of 2 or more wavelets, i.e.,</span>
+<span class="sd">    :math:`\Psi=[\Psi_1,\Psi_2,\dots,\Psi_L]`, :math:`\lambda&gt;0` is a hyperparameter, and where</span>
+<span class="sd">    :math:`\|\cdot\|_n` is either the :math:`\ell_1` norm (``non_linearity=&quot;soft&quot;``),</span>
+<span class="sd">    the :math:`\ell_0` norm (``non_linearity=&quot;hard&quot;``) or a variant of the :math:`\ell_0` norm</span>
+<span class="sd">    (``non_linearity=&quot;topk&quot;``) where only the top-k coefficients are kept; see :meth:`deepinv.models.WaveletPrior` for</span>
+<span class="sd">    more details.</span>
+
+<span class="sd">    The solution is not available in closed-form, thus the denoiser runs an optimization algorithm for each test image.</span>
+
+<span class="sd">    :param int level: decomposition level of the wavelet transform.</span>
+<span class="sd">    :param list[str] wv: list of mother wavelets. The names of the wavelets can be found in `here</span>
+<span class="sd">        &lt;https://wavelets.pybytes.com/&gt;`_. (default: [&quot;db8&quot;, &quot;db4&quot;]).</span>
+<span class="sd">    :param str device: cpu or gpu.</span>
+<span class="sd">    :param int max_iter: number of iterations of the optimization algorithm (default: 10).</span>
+<span class="sd">    :param str non_linearity: &quot;soft&quot;, &quot;hard&quot; or &quot;topk&quot; thresholding (default: &quot;soft&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">list_wv</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;db8&quot;</span><span class="p">,</span> <span class="s2">&quot;db4&quot;</span><span class="p">],</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">non_linearity</span><span class="o">=</span><span class="s2">&quot;soft&quot;</span>
+    <span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list_prox</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">WaveletPrior</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="p">,</span> <span class="n">wv</span><span class="o">=</span><span class="n">wv</span><span class="p">,</span> <span class="n">non_linearity</span><span class="o">=</span><span class="n">non_linearity</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">wv</span> <span class="ow">in</span> <span class="n">list_wv</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>
+
+<div class="viewcode-block" id="WaveletDict.forward">
+<a class="viewcode-back" href="../../../stubs/deepinv.models.WaveletDict.html#deepinv.models.WaveletDict.forward">[docs]</a>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">ths</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Run the model on a noisy image.</span>
+
+<span class="sd">        :param torch.Tensor y: noisy image.</span>
+<span class="sd">        :param float, torch.Tensor ths: noise level.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">z_p</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_prox</span><span class="p">),</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">p_p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">z_p</span><span class="p">)</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">p_p</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">it</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
+            <span class="n">x_prev</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_prox</span><span class="p">)):</span>
+                <span class="n">p_p</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">list_prox</span><span class="p">[</span><span class="n">p</span><span class="p">](</span><span class="n">z_p</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span> <span class="n">ths</span><span class="p">)</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">p_p</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">list_prox</span><span class="p">)):</span>
+                <span class="n">z_p</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">z_p</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span> <span class="o">-</span> <span class="n">p_p</span><span class="p">[</span><span class="n">p</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+            <span class="n">rel_crit</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">x_prev</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="o">+</span> <span class="mf">1e-6</span>
+            <span class="p">)</span>
+            <span class="k">if</span> <span class="n">rel_crit</span> <span class="o">&lt;</span> <span class="mf">1e-3</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="k">return</span> <span class="n">x</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, DeepInv.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NSEKFKYSGR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-NSEKFKYSGR', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

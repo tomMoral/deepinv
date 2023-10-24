@@ -1,0 +1,19 @@
+
+:orphan:
+
+.. _sphx_glr_auto_examples_plug-and-play_sg_execution_times:
+
+
+Computation times
+=================
+**03:19.926** total execution time for **auto_examples_plug-and-play** files:
+
++-----------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_plug-and-play_demo_RED_GSPnP_SR.py` (``demo_RED_GSPnP_SR.py``)         | 01:33.729 | 0.0 MB |
++-----------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_plug-and-play_demo_PnP_DPIR_deblur.py` (``demo_PnP_DPIR_deblur.py``)   | 01:28.270 | 0.0 MB |
++-----------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_plug-and-play_demo_vanilla_PnP.py` (``demo_vanilla_PnP.py``)           | 00:10.590 | 0.0 MB |
++-----------------------------------------------------------------------------------------------------+-----------+--------+
+| :ref:`sphx_glr_auto_examples_plug-and-play_demo_PnP_custom_optim.py` (``demo_PnP_custom_optim.py``) | 00:07.336 | 0.0 MB |
++-----------------------------------------------------------------------------------------------------+-----------+--------+

@@ -1,0 +1,15 @@
+﻿TGV
+===
+
+.. currentmodule:: deepinv.models
+
+.. autoclass:: TGV
+   :members:
+   :show-inheritance:
+   :no-undoc-members:
+   :special-members: __mul__, __add__, __div__, __neg__, __sub__, __truediv__
+
+.. _sphx_glr_backref_deepinv.models.TGV:
+
+.. minigallery:: deepinv.models.TGV
+    :add-heading: Examples using ``TGV``:

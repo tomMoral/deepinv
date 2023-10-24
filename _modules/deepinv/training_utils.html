@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>deepinv.training_utils &mdash; deepinverse 0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-rendered-html.css" type="text/css" />
+    <link rel="shortcut icon" href="../../_static/logo.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/deepinv_logolarge.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.physics.html">Physics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.loss.html">Loss</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.optim.html">Optim</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.pnp.html">PnP and RED algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.unfolded.html">Unfolded algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.sampling.html">Sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../auto_examples/index.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.notation.html">Math Notation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.contributing.html">How to Contribute</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">deepinverse</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">deepinv.training_utils</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for deepinv.training_utils</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">torchvision.utils</span>
+
+<span class="kn">from</span> <span class="nn">torch.profiler</span> <span class="kn">import</span> <span class="n">profile</span><span class="p">,</span> <span class="n">record_function</span><span class="p">,</span> <span class="n">ProfilerActivity</span>  <span class="c1"># to delete</span>
+
+<span class="kn">from</span> <span class="nn">deepinv.utils</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">save_model</span><span class="p">,</span>
+    <span class="n">AverageMeter</span><span class="p">,</span>
+    <span class="n">ProgressMeter</span><span class="p">,</span>
+    <span class="n">get_timestamp</span><span class="p">,</span>
+    <span class="n">cal_psnr</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="kn">from</span> <span class="nn">deepinv.utils</span> <span class="kn">import</span> <span class="n">plot</span><span class="p">,</span> <span class="n">plot_curves</span><span class="p">,</span> <span class="n">wandb_imgs</span><span class="p">,</span> <span class="n">wandb_plot_curves</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">wandb</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">&quot;font.size&quot;</span><span class="p">:</span> <span class="mi">17</span><span class="p">})</span>
+<span class="n">matplotlib</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;lines.linewidth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;text.usetex&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+
+
+<div class="viewcode-block" id="train">
+<a class="viewcode-back" href="../../stubs/deepinv.train.html#deepinv.train">[docs]</a>
+<span class="k">def</span> <span class="nf">train</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">train_dataloader</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="p">,</span>
+    <span class="n">losses</span><span class="p">,</span>
+    <span class="n">eval_dataloader</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">physics</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">optimizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">grad_clip</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">scheduler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">ckp_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">eval_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">log_interval</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">save_path</span><span class="o">=</span><span class="s2">&quot;.&quot;</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">unsupervised</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">plot_images</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">plot_metrics</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">wandb_vis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">wandb_setup</span><span class="o">=</span><span class="p">{},</span>
+    <span class="n">n_plot_max_wandb</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">online_measurements</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Trains a reconstruction network.</span>
+
+
+<span class="sd">    .. note::</span>
+
+<span class="sd">        The losses can be chosen from :ref:`the libraries&#39; training losses &lt;loss&gt;`, or can be a custom loss function,</span>
+<span class="sd">        as long as it takes as input ``(x, x_net, y, physics, model)`` and returns a scalar, where ``x`` is the ground</span>
+<span class="sd">        reconstruction, ``x_net`` is the network reconstruction :math:`\inversef{y, A}`,</span>
+<span class="sd">        ``y`` is the measurement vector, ``physics`` is the forward operator</span>
+<span class="sd">        and ``model`` is the reconstruction network. Note that not all inpus need to be used by the loss,</span>
+<span class="sd">        e.g., self-supervised losses will not make use of ``x``.</span>
+
+
+<span class="sd">    :param torch.nn.Module, deepinv.models.ArtifactRemoval model: Reconstruction network, which can be PnP, unrolled, artifact removal</span>
+<span class="sd">        or any other custom reconstruction network.</span>
+<span class="sd">    :param torch.utils.data.DataLoader train_dataloader: Train dataloader.</span>
+<span class="sd">    :param int epochs: Number of training epochs.</span>
+<span class="sd">    :param torch.nn.Module, list of torch.nn.Module losses: Loss or list of losses used for training the model.</span>
+<span class="sd">    :param torch.utils.data.DataLoader eval_dataloader: Evaluation dataloader.</span>
+<span class="sd">    :param deepinv.physics.Physics, list[deepinv.physics.Physics] physics: Forward operator(s)</span>
+<span class="sd">        used by the reconstruction network at train time.</span>
+<span class="sd">    :param torch.nn.optim optimizer: Torch optimizer for training the network.</span>
+<span class="sd">    :param float grad_clip: Gradient clipping value for the optimizer. If None, no gradient clipping is performed.</span>
+<span class="sd">    :param torch.nn.optim scheduler: Torch scheduler for changing the learning rate across iterations.</span>
+<span class="sd">    :param torch.device device: gpu or cpu.</span>
+<span class="sd">    :param int ckp_interval: The model is saved every ``ckp_interval`` epochs.</span>
+<span class="sd">    :param int eval_interval: Number of epochs between each evaluation of the model on the evaluation set.</span>
+<span class="sd">    :param str save_path: Directory in which to save the trained model.</span>
+<span class="sd">    :param bool verbose: Output training progress information in the console.</span>
+<span class="sd">    :param bool unsupervised: Train an unsupervised network, i.e., uses only measurement vectors y for training.</span>
+<span class="sd">    :param bool plot_images: Plots reconstructions every ``ckp_interval`` epochs.</span>
+<span class="sd">    :param bool wandb_vis: Use Weights &amp; Biases visualization, see https://wandb.ai/ for more details.</span>
+<span class="sd">    :param dict wandb_setup: Dictionary with the setup for wandb, see https://docs.wandb.ai/quickstart for more details.</span>
+<span class="sd">    :param int n_plot_max_wandb: Maximum number of images to plot in wandb visualization.</span>
+<span class="sd">    :param bool online_measurements: Generate the measurements in an online manner at each iteration by calling</span>
+<span class="sd">        ``physics(x)``. This results in a wider range of measurements if the physics&#39; parameters, such as</span>
+<span class="sd">         parameters of the forward operator or noise realizations, can change between each sample; these are updated</span>
+<span class="sd">         with the ``physics.reset()`` method. If ``online_measurements=False``, the measurements are generated</span>
+<span class="sd">        offline before training and saved in memory.</span>
+<span class="sd">    :returns: Trained model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">save_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">save_path</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">wandb_vis</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">wandb</span><span class="o">.</span><span class="n">run</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wandb</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="n">wandb_setup</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">losses</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">losses</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="n">losses</span> <span class="o">=</span> <span class="p">[</span><span class="n">losses</span><span class="p">]</span>
+
+    <span class="n">loss_meter</span> <span class="o">=</span> <span class="n">AverageMeter</span><span class="p">(</span><span class="s2">&quot;loss&quot;</span><span class="p">,</span> <span class="s2">&quot;:.2e&quot;</span><span class="p">)</span>
+    <span class="n">meters</span> <span class="o">=</span> <span class="p">[</span><span class="n">loss_meter</span><span class="p">]</span>
+    <span class="n">eval_psnr_net</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">losses_verbose</span> <span class="o">=</span> <span class="p">[</span><span class="n">AverageMeter</span><span class="p">(</span><span class="s2">&quot;Loss_&quot;</span> <span class="o">+</span> <span class="n">l</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;:.2e&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">losses</span><span class="p">]</span>
+    <span class="n">train_psnr</span> <span class="o">=</span> <span class="n">AverageMeter</span><span class="p">(</span><span class="s2">&quot;Train_psnr_model&quot;</span><span class="p">,</span> <span class="s2">&quot;:.2f&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">eval_dataloader</span><span class="p">:</span>
+        <span class="n">eval_psnr_net</span> <span class="o">=</span> <span class="n">AverageMeter</span><span class="p">(</span><span class="s2">&quot;Eval_psnr_model&quot;</span><span class="p">,</span> <span class="s2">&quot;:.2f&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">loss</span> <span class="ow">in</span> <span class="n">losses_verbose</span><span class="p">:</span>
+        <span class="n">meters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="p">)</span>
+
+    <span class="n">meters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">train_psnr</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">eval_dataloader</span><span class="p">:</span>
+        <span class="n">meters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">eval_psnr_net</span><span class="p">)</span>
+
+    <span class="n">progress</span> <span class="o">=</span> <span class="n">ProgressMeter</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">meters</span><span class="p">)</span>
+
+    <span class="n">save_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">save_path</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">get_timestamp</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">()</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">requires_grad</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The model has </span><span class="si">{</span><span class="n">params</span><span class="si">}</span><span class="s2"> trainable parameters&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">physics</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">physics</span> <span class="o">=</span> <span class="p">[</span><span class="n">physics</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">losses</span> <span class="o">=</span> <span class="p">[</span><span class="n">losses</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">train_dataloader</span> <span class="o">=</span> <span class="p">[</span><span class="n">train_dataloader</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">eval_dataloader</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">eval_dataloader</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">eval_dataloader</span> <span class="o">=</span> <span class="p">[</span><span class="n">eval_dataloader</span><span class="p">]</span>
+
+    <span class="n">G</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">)</span>
+
+    <span class="n">loss_history</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">meter</span> <span class="ow">in</span> <span class="n">meters</span><span class="p">:</span>
+            <span class="n">meter</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+        <span class="n">iterators</span> <span class="o">=</span> <span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="n">loader</span><span class="p">)</span> <span class="k">for</span> <span class="n">loader</span> <span class="ow">in</span> <span class="n">train_dataloader</span><span class="p">]</span>
+        <span class="n">batches</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">train_dataloader</span><span class="p">[</span><span class="n">G</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batches</span><span class="p">):</span>
+            <span class="n">G_perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">G</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">G_perm</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">online_measurements</span><span class="p">:</span>
+                    <span class="n">x</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+                        <span class="n">iterators</span><span class="p">[</span><span class="n">g</span><span class="p">]</span>
+                    <span class="p">)</span>  <span class="c1"># In this case the dataloader outputs also a class label</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+                    <span class="n">physics_cur</span> <span class="o">=</span> <span class="n">physics</span><span class="p">[</span><span class="n">g</span><span class="p">]</span>
+                    <span class="n">physics_cur</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+                    <span class="n">y</span> <span class="o">=</span> <span class="n">physics_cur</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">unsupervised</span><span class="p">:</span>
+                        <span class="n">y</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterators</span><span class="p">[</span><span class="n">g</span><span class="p">])</span>
+                        <span class="n">x</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">iterators</span><span class="p">[</span><span class="n">g</span><span class="p">])</span>
+
+                        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">:</span>
+                            <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+                    <span class="n">physics_cur</span> <span class="o">=</span> <span class="n">physics</span><span class="p">[</span><span class="n">g</span><span class="p">]</span>
+
+                <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+
+                <span class="n">x_net</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">physics_cur</span><span class="p">)</span>
+
+                <span class="n">loss_total</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">losses</span><span class="p">):</span>
+                    <span class="n">loss</span> <span class="o">=</span> <span class="n">l</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">x_net</span><span class="o">=</span><span class="n">x_net</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">physics</span><span class="o">=</span><span class="n">physics</span><span class="p">[</span><span class="n">g</span><span class="p">],</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
+                    <span class="n">loss_total</span> <span class="o">+=</span> <span class="n">loss</span>
+                    <span class="n">losses_verbose</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+                <span class="n">loss_total</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="n">grad_clip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">clip_grad_norm_</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="n">grad_clip</span><span class="p">)</span>
+
+                <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+                <span class="k">if</span> <span class="n">wandb_vis</span><span class="p">:</span>
+                    <span class="n">wandb</span><span class="o">.</span><span class="n">log</span><span class="p">({</span><span class="s2">&quot;training loss&quot;</span><span class="p">:</span> <span class="n">loss_total</span><span class="o">.</span><span class="n">item</span><span class="p">()})</span>
+
+                <span class="n">loss_meter</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">loss_total</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">unsupervised</span><span class="p">:</span>
+                    <span class="n">train_psnr</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">cal_psnr</span><span class="p">(</span><span class="n">x_net</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">wandb_vis</span>
+        <span class="p">):</span>  <span class="c1"># Note that this may not be 16 images because the last batch may be smaller</span>
+            <span class="n">in_image</span> <span class="o">=</span> <span class="n">physics_cur</span><span class="o">.</span><span class="n">A_adjoint</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">vis_array</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">in_image</span><span class="p">,</span> <span class="n">x_net</span><span class="p">,</span> <span class="n">x</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">vis_array</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">vis_array</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">grid_image</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">make_grid</span><span class="p">(</span><span class="n">vis_array</span><span class="p">,</span> <span class="n">nrow</span><span class="o">=</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">images</span> <span class="o">=</span> <span class="n">wandb</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span>
+                <span class="n">grid_image</span><span class="p">,</span> <span class="n">caption</span><span class="o">=</span><span class="s2">&quot;Top: Input, Middle: Output, Bottom: target&quot;</span>
+            <span class="p">)</span>
+            <span class="n">wandb</span><span class="o">.</span><span class="n">log</span><span class="p">({</span><span class="s2">&quot;Training samples&quot;</span><span class="p">:</span> <span class="n">images</span><span class="p">})</span>
+
+        <span class="n">check</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="ow">not</span> <span class="n">unsupervised</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">eval_dataloader</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="ow">and</span> <span class="p">((</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">eval_interval</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">epochs</span><span class="p">)</span>
+        <span class="p">)</span>
+
+        <span class="n">perform_eval</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">(</span><span class="ow">not</span> <span class="n">unsupervised</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="n">eval_dataloader</span>
+            <span class="ow">and</span> <span class="p">((</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">eval_interval</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">epochs</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">perform_eval</span><span class="p">:</span>
+            <span class="n">test_psnr</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">test</span><span class="p">(</span>
+                <span class="n">model</span><span class="p">,</span>
+                <span class="n">eval_dataloader</span><span class="p">,</span>
+                <span class="n">physics</span><span class="p">,</span>
+                <span class="n">device</span><span class="p">,</span>
+                <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">plot_images</span><span class="o">=</span><span class="n">plot_images</span><span class="p">,</span>
+                <span class="n">plot_metrics</span><span class="o">=</span><span class="n">plot_metrics</span><span class="p">,</span>
+                <span class="n">wandb_vis</span><span class="o">=</span><span class="n">wandb_vis</span><span class="p">,</span>
+                <span class="n">wandb_setup</span><span class="o">=</span><span class="n">wandb_setup</span><span class="p">,</span>
+                <span class="n">step</span><span class="o">=</span><span class="n">epoch</span><span class="p">,</span>
+                <span class="n">n_plot_max_wandb</span><span class="o">=</span><span class="n">n_plot_max_wandb</span><span class="p">,</span>
+                <span class="n">online_measurements</span><span class="o">=</span><span class="n">online_measurements</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="n">eval_psnr_net</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">test_psnr</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">scheduler</span><span class="p">:</span>
+            <span class="n">scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+
+        <span class="n">loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss_meter</span><span class="o">.</span><span class="n">avg</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">wandb_vis</span><span class="p">:</span>
+            <span class="n">last_lr</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">scheduler</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">scheduler</span><span class="o">.</span><span class="n">get_last_lr</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">unsupervised</span> <span class="ow">and</span> <span class="n">perform_eval</span><span class="p">:</span>
+                <span class="n">wandb</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;mean training loss&quot;</span><span class="p">:</span> <span class="n">loss_meter</span><span class="o">.</span><span class="n">avg</span><span class="p">,</span>
+                        <span class="s2">&quot;mean training psnr&quot;</span><span class="p">:</span> <span class="n">train_psnr</span><span class="o">.</span><span class="n">avg</span><span class="p">,</span>
+                        <span class="s2">&quot;mean eval psnr&quot;</span><span class="p">:</span> <span class="n">eval_psnr_net</span><span class="o">.</span><span class="n">avg</span><span class="p">,</span>
+                        <span class="s2">&quot;epoch&quot;</span><span class="p">:</span> <span class="n">epoch</span><span class="p">,</span>
+                        <span class="s2">&quot;learning rate&quot;</span><span class="p">:</span> <span class="n">last_lr</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">wandb</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+                    <span class="p">{</span>
+                        <span class="s2">&quot;mean training loss&quot;</span><span class="p">:</span> <span class="n">loss_meter</span><span class="o">.</span><span class="n">avg</span><span class="p">,</span>
+                        <span class="s2">&quot;mean training psnr&quot;</span><span class="p">:</span> <span class="n">train_psnr</span><span class="o">.</span><span class="n">avg</span><span class="p">,</span>
+                        <span class="s2">&quot;epoch&quot;</span><span class="p">:</span> <span class="n">epoch</span><span class="p">,</span>
+                        <span class="s2">&quot;learning rate&quot;</span><span class="p">:</span> <span class="n">last_lr</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="n">log_interval</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">progress</span><span class="o">.</span><span class="n">display</span><span class="p">(</span><span class="n">epoch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">save_model</span><span class="p">(</span>
+            <span class="n">epoch</span><span class="p">,</span>
+            <span class="n">model</span><span class="p">,</span>
+            <span class="n">optimizer</span><span class="p">,</span>
+            <span class="n">ckp_interval</span><span class="p">,</span>
+            <span class="n">epochs</span><span class="p">,</span>
+            <span class="n">loss_history</span><span class="p">,</span>
+            <span class="nb">str</span><span class="p">(</span><span class="n">save_path</span><span class="p">),</span>
+            <span class="n">eval_psnr_net</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">wandb_vis</span><span class="p">:</span>
+        <span class="n">wandb</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;model.h5&quot;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">model</span></div>
+
+
+
+<div class="viewcode-block" id="test">
+<a class="viewcode-back" href="../../stubs/deepinv.test.html#deepinv.test">[docs]</a>
+<span class="k">def</span> <span class="nf">test</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">test_dataloader</span><span class="p">,</span>
+    <span class="n">physics</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span>
+    <span class="n">plot_images</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">save_folder</span><span class="o">=</span><span class="s2">&quot;results&quot;</span><span class="p">,</span>
+    <span class="n">plot_metrics</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">plot_only_first_batch</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">wandb_vis</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">wandb_setup</span><span class="o">=</span><span class="p">{},</span>
+    <span class="n">step</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">n_plot_max_wandb</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+    <span class="n">online_measurements</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tests a reconstruction network.</span>
+
+<span class="sd">    This function computes the PSNR of the reconstruction network on the test set,</span>
+<span class="sd">    and optionally plots the reconstructions as well as the metrics computed along the iterations.</span>
+<span class="sd">    Note that by default only the batch is plotted.</span>
+
+<span class="sd">    :param torch.nn.Module, deepinv.models.ArtifactRemoval model: Reconstruction network, which can be PnP, unrolled, artifact removal</span>
+<span class="sd">        or any other custom reconstruction network.</span>
+<span class="sd">    :param torch.utils.data.DataLoader test_dataloader: Test data loader, which should provide a tuple of (x, y) pairs.</span>
+<span class="sd">        See :ref:`datasets &lt;datasets&gt;` for more details.</span>
+<span class="sd">    :param deepinv.physics.Physics, list[deepinv.physics.Physics] physics: Forward operator(s)</span>
+<span class="sd">        used by the reconstruction network at test time.</span>
+<span class="sd">    :param torch.device device: gpu or cpu.</span>
+<span class="sd">    :param bool plot_images: Plot the ground-truth and estimated images.</span>
+<span class="sd">    :param str save_folder: Directory in which to save plotted reconstructions.</span>
+<span class="sd">    :param bool plot_metrics: plot the metrics to be plotted w.r.t iteration.</span>
+<span class="sd">    :param bool verbose: Output training progress information in the console.</span>
+<span class="sd">    :param bool plot_only_first_batch: Plot only the first batch of the test set.</span>
+<span class="sd">    :param bool wandb_vis: Use Weights &amp; Biases visualization, see https://wandb.ai/ for more details.</span>
+<span class="sd">    :param dict wandb_setup: Dictionary with the setup for wandb, see https://docs.wandb.ai/quickstart for more details.</span>
+<span class="sd">    :param int step: Step number for wandb visualization.</span>
+<span class="sd">    :param int n_plot_max_wandb: Maximum number of images to plot in wandb visualization.</span>
+<span class="sd">    :returns: A tuple of floats (test_psnr, test_std_psnr, linear_std_psnr, linear_std_psnr) with the PSNR of the</span>
+<span class="sd">        reconstruction network and a simple linear inverse on the test set.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">save_folder</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">save_folder</span><span class="p">)</span>
+
+    <span class="n">psnr_init</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">psnr_net</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">physics</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">physics</span> <span class="o">=</span> <span class="p">[</span><span class="n">physics</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">test_dataloader</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">list</span><span class="p">:</span>
+        <span class="n">test_dataloader</span> <span class="o">=</span> <span class="p">[</span><span class="n">test_dataloader</span><span class="p">]</span>
+
+    <span class="n">G</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_dataloader</span><span class="p">)</span>
+
+    <span class="n">show_operators</span> <span class="o">=</span> <span class="mi">5</span>
+
+    <span class="k">if</span> <span class="n">wandb_vis</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">wandb</span><span class="o">.</span><span class="n">run</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">wandb</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">**</span><span class="n">wandb_setup</span><span class="p">)</span>
+        <span class="n">psnr_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">G</span><span class="p">):</span>
+        <span class="n">dataloader</span> <span class="o">=</span> <span class="n">test_dataloader</span><span class="p">[</span><span class="n">g</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Processing data of operator </span><span class="si">{</span><span class="n">g</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2"> out of </span><span class="si">{</span><span class="n">G</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="n">dataloader</span><span class="p">,</span> <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="n">online_measurements</span><span class="p">:</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">batch</span>  <span class="c1"># In this case the dataloader outputs also a class label</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">physics_cur</span> <span class="o">=</span> <span class="n">physics</span><span class="p">[</span><span class="n">g</span><span class="p">]</span>
+                <span class="n">physics_cur</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">physics_cur</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">batch</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span> <span class="ow">or</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">:</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+                <span class="n">physics_cur</span> <span class="o">=</span> <span class="n">physics</span><span class="p">[</span><span class="n">g</span><span class="p">]</span>
+
+                <span class="n">y</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+
+            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">plot_metrics</span><span class="p">:</span>
+                    <span class="n">x1</span><span class="p">,</span> <span class="n">metrics</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">physics_cur</span><span class="p">,</span> <span class="n">x_gt</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">compute_metrics</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">x1</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="n">physics</span><span class="p">[</span><span class="n">g</span><span class="p">])</span>
+
+            <span class="n">x_init</span> <span class="o">=</span> <span class="n">physics_cur</span><span class="o">.</span><span class="n">A_adjoint</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+            <span class="n">cur_psnr_init</span> <span class="o">=</span> <span class="n">cal_psnr</span><span class="p">(</span><span class="n">x_init</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+            <span class="n">cur_psnr</span> <span class="o">=</span> <span class="n">cal_psnr</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
+            <span class="n">psnr_init</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cur_psnr_init</span><span class="p">)</span>
+            <span class="n">psnr_net</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cur_psnr</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">wandb_vis</span><span class="p">:</span>
+                <span class="n">psnr_data</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">g</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">cur_psnr_init</span><span class="p">,</span> <span class="n">cur_psnr</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">plot_images</span><span class="p">:</span>
+                <span class="n">save_folder_im</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">save_folder</span> <span class="o">/</span> <span class="p">(</span><span class="s2">&quot;G&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">)))</span> <span class="k">if</span> <span class="n">G</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">save_folder</span>
+                <span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;images&quot;</span>
+                <span class="n">save_folder_im</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">save_folder_im</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">if</span> <span class="n">plot_metrics</span><span class="p">:</span>
+                <span class="n">save_folder_curve</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="p">(</span><span class="n">save_folder</span> <span class="o">/</span> <span class="p">(</span><span class="s2">&quot;G&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">g</span><span class="p">)))</span> <span class="k">if</span> <span class="n">G</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">save_folder</span>
+                <span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;curves&quot;</span>
+                <span class="n">save_folder_curve</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">plot_images</span> <span class="ow">or</span> <span class="n">wandb_vis</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">g</span> <span class="o">&lt;</span> <span class="n">show_operators</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">plot_only_first_batch</span> <span class="ow">or</span> <span class="p">(</span><span class="n">plot_only_first_batch</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                            <span class="n">imgs</span> <span class="o">=</span> <span class="p">[</span><span class="n">y</span><span class="p">,</span> <span class="n">x_init</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span>
+                            <span class="n">name_imgs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Input&quot;</span><span class="p">,</span> <span class="s2">&quot;Linear&quot;</span><span class="p">,</span> <span class="s2">&quot;Recons.&quot;</span><span class="p">,</span> <span class="s2">&quot;GT&quot;</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">imgs</span> <span class="o">=</span> <span class="p">[</span><span class="n">x_init</span><span class="p">,</span> <span class="n">x1</span><span class="p">,</span> <span class="n">x</span><span class="p">]</span>
+                            <span class="n">name_imgs</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Linear&quot;</span><span class="p">,</span> <span class="s2">&quot;Recons.&quot;</span><span class="p">,</span> <span class="s2">&quot;GT&quot;</span><span class="p">]</span>
+                        <span class="k">if</span> <span class="n">plot_images</span><span class="p">:</span>
+                            <span class="n">plot</span><span class="p">(</span>
+                                <span class="n">imgs</span><span class="p">,</span>
+                                <span class="n">titles</span><span class="o">=</span><span class="n">name_imgs</span><span class="p">,</span>
+                                <span class="n">save_dir</span><span class="o">=</span><span class="n">save_folder_im</span><span class="p">,</span>
+                                <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="p">)</span>
+                        <span class="k">if</span> <span class="n">wandb_vis</span><span class="p">:</span>
+                            <span class="n">vis_array</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">imgs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                            <span class="n">vis_array</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">vis_array</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                            <span class="n">grid_image</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">make_grid</span><span class="p">(</span><span class="n">vis_array</span><span class="p">,</span> <span class="n">nrow</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+                            <span class="n">images</span> <span class="o">=</span> <span class="n">wandb</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span>
+                                <span class="n">grid_image</span><span class="p">,</span>
+                                <span class="n">caption</span><span class="o">=</span><span class="s2">&quot;Input (Left) / Backprojection (optional) / Output / Target (optional)&quot;</span><span class="p">,</span>
+                            <span class="p">)</span>
+                            <span class="n">wandb</span><span class="o">.</span><span class="n">log</span><span class="p">({</span><span class="sa">f</span><span class="s2">&quot;Test images batch_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2"> (G=</span><span class="si">{</span><span class="n">g</span><span class="si">}</span><span class="s2">) &quot;</span><span class="p">:</span> <span class="n">images</span><span class="p">})</span>
+
+            <span class="k">if</span> <span class="n">plot_metrics</span><span class="p">:</span>
+                <span class="n">plot_curves</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_folder_curve</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">wandb_vis</span><span class="p">:</span>
+                    <span class="n">wandb_plot_curves</span><span class="p">(</span><span class="n">metrics</span><span class="p">,</span> <span class="n">batch_idx</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+
+    <span class="n">test_psnr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">psnr_net</span><span class="p">)</span>
+    <span class="n">test_std_psnr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">psnr_net</span><span class="p">)</span>
+    <span class="n">linear_psnr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">psnr_init</span><span class="p">)</span>
+    <span class="n">linear_std_psnr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">psnr_init</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Test PSNR: Linear rec.: </span><span class="si">{</span><span class="n">linear_psnr</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">+-</span><span class="si">{</span><span class="n">linear_std_psnr</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> dB | Model: </span><span class="si">{</span><span class="n">test_psnr</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">+-</span><span class="si">{</span><span class="n">test_std_psnr</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> dB. &quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">wandb_vis</span><span class="p">:</span>
+        <span class="n">wandb</span><span class="o">.</span><span class="n">log</span><span class="p">({</span><span class="s2">&quot;Test PSNR&quot;</span><span class="p">:</span> <span class="n">test_psnr</span><span class="p">},</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">test_psnr</span><span class="p">,</span> <span class="n">test_std_psnr</span><span class="p">,</span> <span class="n">linear_psnr</span><span class="p">,</span> <span class="n">linear_std_psnr</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, DeepInv.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NSEKFKYSGR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-NSEKFKYSGR', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

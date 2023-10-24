@@ -1,0 +1,15 @@
+﻿fStepCP
+=======
+
+.. currentmodule:: deepinv.optim.optim_iterators.primal_dual_CP
+
+.. autoclass:: fStepCP
+   :members:
+   :show-inheritance:
+   :no-undoc-members:
+   :special-members: __mul__, __add__, __div__, __neg__, __sub__, __truediv__
+
+.. _sphx_glr_backref_deepinv.optim.optim_iterators.primal_dual_CP.fStepCP:
+
+.. minigallery:: deepinv.optim.optim_iterators.primal_dual_CP.fStepCP
+    :add-heading: Examples using ``fStepCP``:

@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vanilla Unfolded algorithm for super-resolution &mdash; deepinverse 0.1 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/sg_gallery-rendered-html.css" type="text/css" />
+    <link rel="shortcut icon" href="../../_static/logo.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../../_static/documentation_options.js?v=2709fde1"></script>
+        <script src="../../_static/doctools.js?v=888ff710"></script>
+        <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Deep Equilibrium (DEQ) algorithms for image deblurring" href="demo_DEQ.html" />
+    <link rel="prev" title="Learned iterative custom prior" href="demo_custom_prior_unfolded.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../../index.html">
+            
+              <img src="../../_static/deepinv_logolarge.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.physics.html">Physics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.loss.html">Loss</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.optim.html">Optim</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.pnp.html">PnP and RED algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.unfolded.html">Unfolded algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.sampling.html">Sampling</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../index.html">Examples</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../index.html#basics">Basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#plug-and-play">Plug-and-Play</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#sampling">Sampling</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../index.html#self-supervised-learning">Self-Supervised Learning</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../index.html#unfolded">Unfolded</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="demo_LISTA.html">Learned Iterative Soft-Thresholding Algorithm (LISTA) for compressed sensing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="demo_custom_prior_unfolded.html">Learned iterative custom prior</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">Vanilla Unfolded algorithm for super-resolution</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#setup-paths-for-data-loading-and-results">Setup paths for data loading and results.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#load-base-image-datasets-and-degradation-operators">Load base image datasets and degradation operators.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#generate-a-dataset-of-low-resolution-images-and-load-it">Generate a dataset of low resolution images and load it.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#define-the-unfolded-pnp-algorithm">Define the unfolded PnP algorithm.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#define-the-training-parameters">Define the training parameters.</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#train-the-network">Train the network</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#test-the-network">Test the network</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#plotting-the-trained-parameters">Plotting the trained parameters.</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="demo_DEQ.html">Deep Equilibrium (DEQ) algorithms for image deblurring</a></li>
+<li class="toctree-l3"><a class="reference internal" href="demo_learned_primal_dual.html">Learned Primal-Dual algorithm for CT scan.</a></li>
+<li class="toctree-l3"><a class="reference internal" href="demo_unfolded_constrained_LISTA.html">Unfolded Chambolle-Pock for constrained image inpainting</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.notation.html">Math Notation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../deepinv.contributing.html">How to Contribute</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">deepinverse</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Examples</a></li>
+      <li class="breadcrumb-item active">Vanilla Unfolded algorithm for super-resolution</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../../_sources/auto_examples/unfolded/demo_vanilla_unfolded.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <div class="sphx-glr-download-link-note admonition note">
+<p class="admonition-title">Note</p>
+<p><a class="reference internal" href="#sphx-glr-download-auto-examples-unfolded-demo-vanilla-unfolded-py"><span class="std std-ref">Go to the end</span></a>
+to download the full example code</p>
+</div>
+<section class="sphx-glr-example-title" id="vanilla-unfolded-algorithm-for-super-resolution">
+<span id="sphx-glr-auto-examples-unfolded-demo-vanilla-unfolded-py"></span><h1>Vanilla Unfolded algorithm for super-resolution<a class="headerlink" href="#vanilla-unfolded-algorithm-for-super-resolution" title="Link to this heading"></a></h1>
+<p>This is a simple example to show how to use vanilla unfolded Plug-and-Play.
+The DnCNN denoiser and the algorithm parameters (stepsize, regularization parameters) are trained jointly.
+For simplicity, we show how to train the algorithm on a  small dataset. For optimal results, use a larger dataset.
+For visualizing the training, you can use Weight&amp;Bias (wandb) by setting <code class="docutils literal notranslate"><span class="pre">wandb_vis=True</span></code>.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">deepinv</span> <span class="k">as</span> <span class="nn">dinv</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.Path" title="pathlib.Path" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class"><span class="n">Path</span></a>
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">from</span> <span class="nn">torch.utils.data</span> <span class="kn">import</span> <a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">DataLoader</span></a>
+<span class="kn">from</span> <span class="nn">deepinv.optim.data_fidelity</span> <span class="kn">import</span> <a href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">L2</span></a>
+<span class="kn">from</span> <span class="nn">deepinv.optim.prior</span> <span class="kn">import</span> <a href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">PnP</span></a>
+<span class="kn">from</span> <span class="nn">deepinv.unfolded</span> <span class="kn">import</span> <span class="n">unfolded_builder</span>
+<span class="kn">from</span> <span class="nn">deepinv.training_utils</span> <span class="kn">import</span> <span class="n">train</span><span class="p">,</span> <span class="n">test</span>
+<span class="kn">from</span> <span class="nn">torchvision</span> <span class="kn">import</span> <span class="n">transforms</span>
+<span class="kn">from</span> <span class="nn">deepinv.utils.demo</span> <span class="kn">import</span> <span class="n">load_dataset</span>
+</pre></div>
+</div>
+<section id="setup-paths-for-data-loading-and-results">
+<h2>Setup paths for data loading and results.<a class="headerlink" href="#setup-paths-for-data-loading-and-results" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">BASE_DIR</span></a> <span class="o">=</span> <a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.Path" title="pathlib.Path" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class"><span class="n">Path</span></a><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+<a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ORIGINAL_DATA_DIR</span></a> <span class="o">=</span> <a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">BASE_DIR</span></a> <span class="o">/</span> <span class="s2">&quot;datasets&quot;</span>
+<a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">DATA_DIR</span></a> <span class="o">=</span> <a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">BASE_DIR</span></a> <span class="o">/</span> <span class="s2">&quot;measurements&quot;</span>
+<a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">RESULTS_DIR</span></a> <span class="o">=</span> <a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">BASE_DIR</span></a> <span class="o">/</span> <span class="s2">&quot;results&quot;</span>
+<a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">CKPT_DIR</span></a> <span class="o">=</span> <a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">BASE_DIR</span></a> <span class="o">/</span> <span class="s2">&quot;ckpts&quot;</span>
+
+<span class="c1"># Set the global random seed from pytorch to ensure reproducibility of the example.</span>
+<a href="https://pytorch.org/docs/2.0/generated/torch.manual_seed.html#torch.manual_seed" title="torch.manual_seed" class="sphx-glr-backref-module-torch sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span></a><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a> <span class="o">=</span> <span class="n">dinv</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">get_freer_gpu</span><span class="p">()</span> <span class="k">if</span> <a href="https://pytorch.org/docs/2.0/generated/torch.cuda.is_available.html#torch.cuda.is_available" title="torch.cuda.is_available" class="sphx-glr-backref-module-torch-cuda sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="load-base-image-datasets-and-degradation-operators">
+<h2>Load base image datasets and degradation operators.<a class="headerlink" href="#load-base-image-datasets-and-degradation-operators" title="Link to this heading"></a></h2>
+<p>In this example, we use the CBSD500 dataset for training and the Set3C dataset for testing.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img_size</span></a> <span class="o">=</span> <span class="mi">64</span> <span class="k">if</span> <a href="https://pytorch.org/docs/2.0/generated/torch.cuda.is_available.html#torch.cuda.is_available" title="torch.cuda.is_available" class="sphx-glr-backref-module-torch-cuda sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="mi">32</span>
+<a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">n_channels</span></a> <span class="o">=</span> <span class="mi">3</span>  <span class="c1"># 3 for color images, 1 for gray-scale images</span>
+<a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">operation</span></a> <span class="o">=</span> <span class="s2">&quot;super-resolution&quot;</span>
+</pre></div>
+</div>
+</section>
+<section id="generate-a-dataset-of-low-resolution-images-and-load-it">
+<h2>Generate a dataset of low resolution images and load it.<a class="headerlink" href="#generate-a-dataset-of-low-resolution-images-and-load-it" title="Link to this heading"></a></h2>
+<p>We use the Downsampling class from the physics module to generate a dataset of low resolution images.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># For simplicity, we use a small dataset for training.</span>
+<span class="c1"># To be replaced for optimal results. For example, you can use the larger &quot;drunet&quot; dataset.</span>
+<a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">train_dataset_name</span></a> <span class="o">=</span> <span class="s2">&quot;CBSD500&quot;</span>
+<a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">test_dataset_name</span></a> <span class="o">=</span> <span class="s2">&quot;set3c&quot;</span>
+<span class="c1"># Specify the  train and test transforms to be applied to the input images.</span>
+<span class="n">test_transform</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">(</span>
+    <span class="p">[</span><a href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">transforms</span><span class="o">.</span><span class="n">CenterCrop</span></a><span class="p">(</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img_size</span></a><span class="p">),</span> <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">()]</span>
+<span class="p">)</span>
+<span class="n">train_transform</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">Compose</span><span class="p">(</span>
+    <span class="p">[</span><a href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">transforms</span><span class="o">.</span><span class="n">RandomCrop</span></a><span class="p">(</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img_size</span></a><span class="p">),</span> <span class="n">transforms</span><span class="o">.</span><span class="n">ToTensor</span><span class="p">()]</span>
+<span class="p">)</span>
+<span class="c1"># Define the base train and test datasets of clean images.</span>
+<span class="n">train_base_dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span>
+    <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">train_dataset_name</span></a><span class="p">,</span> <a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ORIGINAL_DATA_DIR</span></a><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">train_transform</span>
+<span class="p">)</span>
+<span class="n">test_base_dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span>
+    <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">test_dataset_name</span></a><span class="p">,</span> <a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">ORIGINAL_DATA_DIR</span></a><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">test_transform</span>
+<span class="p">)</span>
+
+<span class="c1"># Use parallel dataloader if using a GPU to fasten training, otherwise, as all computes are on CPU, use synchronous</span>
+<span class="c1"># dataloading.</span>
+<a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_workers</span></a> <span class="o">=</span> <span class="mi">4</span> <span class="k">if</span> <a href="https://pytorch.org/docs/2.0/generated/torch.cuda.is_available.html#torch.cuda.is_available" title="torch.cuda.is_available" class="sphx-glr-backref-module-torch-cuda sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="mi">0</span>
+
+<span class="c1"># Degradation parameters</span>
+<a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">factor</span></a> <span class="o">=</span> <span class="mi">2</span>
+<a href="https://docs.python.org/3.4/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">noise_level_img</span></a> <span class="o">=</span> <span class="mf">0.03</span>
+
+<span class="c1"># Generate the gaussian blur downsampling operator.</span>
+<span class="n">physics</span> <span class="o">=</span> <a href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">dinv</span><span class="o">.</span><span class="n">physics</span><span class="o">.</span><span class="n">Downsampling</span></a><span class="p">(</span>
+    <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img_size</span></a><span class="o">=</span><span class="p">(</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">n_channels</span></a><span class="p">,</span> <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img_size</span></a><span class="p">,</span> <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img_size</span></a><span class="p">),</span>
+    <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">factor</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">factor</span></a><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;gauss&quot;</span><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">,</span>
+    <span class="n">noise_model</span><span class="o">=</span><a href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">dinv</span><span class="o">.</span><span class="n">physics</span><span class="o">.</span><span class="n">GaussianNoise</span></a><span class="p">(</span><span class="n">sigma</span><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">noise_level_img</span></a><span class="p">),</span>
+<span class="p">)</span>
+<a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">my_dataset_name</span></a> <span class="o">=</span> <span class="s2">&quot;demo_unfolded_sr&quot;</span>
+<a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">n_images_max</span></a> <span class="o">=</span> <span class="p">(</span>
+    <span class="mi">1000</span> <span class="k">if</span> <a href="https://pytorch.org/docs/2.0/generated/torch.cuda.is_available.html#torch.cuda.is_available" title="torch.cuda.is_available" class="sphx-glr-backref-module-torch-cuda sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="mi">10</span>
+<span class="p">)</span>  <span class="c1"># maximal number of images used for training</span>
+<a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">measurement_dir</span></a> <span class="o">=</span> <a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">DATA_DIR</span></a> <span class="o">/</span> <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">train_dataset_name</span></a> <span class="o">/</span> <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">operation</span></a>
+<a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">generated_datasets_path</span></a> <span class="o">=</span> <span class="n">dinv</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">generate_dataset</span><span class="p">(</span>
+    <span class="n">train_dataset</span><span class="o">=</span><span class="n">train_base_dataset</span><span class="p">,</span>
+    <span class="n">test_dataset</span><span class="o">=</span><span class="n">test_base_dataset</span><span class="p">,</span>
+    <span class="n">physics</span><span class="o">=</span><span class="n">physics</span><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">,</span>
+    <span class="n">save_dir</span><span class="o">=</span><a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">measurement_dir</span></a><span class="p">,</span>
+    <span class="n">train_datapoints</span><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">n_images_max</span></a><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_workers</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_workers</span></a><span class="p">,</span>
+    <span class="n">dataset_filename</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">my_dataset_name</span></a><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">train_dataset</span> <span class="o">=</span> <a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.Dataset" title="torch.utils.data.Dataset" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">dinv</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">HDF5Dataset</span></a><span class="p">(</span><span class="n">path</span><span class="o">=</span><a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">generated_datasets_path</span></a><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">test_dataset</span> <span class="o">=</span> <a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.Dataset" title="torch.utils.data.Dataset" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">dinv</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">HDF5Dataset</span></a><span class="p">(</span><span class="n">path</span><span class="o">=</span><a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">generated_datasets_path</span></a><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Downloading datasets/CBSD500.zip
+
+  0%|          | 0.00/71.0M [00:00&lt;?, ?iB/s]
+  0%|          | 15.4k/71.0M [00:00&lt;10:50, 109kiB/s]
+  0%|          | 48.1k/71.0M [00:00&lt;05:56, 199kiB/s]
+  0%|          | 144k/71.0M [00:00&lt;02:21, 501kiB/s]
+  0%|          | 261k/71.0M [00:00&lt;01:37, 724kiB/s]
+  1%|          | 458k/71.0M [00:00&lt;01:03, 1.12MiB/s]
+  1%|          | 769k/71.0M [00:00&lt;00:40, 1.75MiB/s]
+  2%|▏         | 1.09M/71.0M [00:00&lt;00:33, 2.07MiB/s]
+  2%|▏         | 1.42M/71.0M [00:00&lt;00:29, 2.33MiB/s]
+  2%|▏         | 1.74M/71.0M [00:01&lt;00:27, 2.51MiB/s]
+  3%|▎         | 2.04M/71.0M [00:01&lt;00:26, 2.65MiB/s]
+  3%|▎         | 2.31M/71.0M [00:04&lt;04:16, 268kiB/s]
+  4%|▎         | 2.65M/71.0M [00:04&lt;02:52, 397kiB/s]
+  4%|▍         | 2.98M/71.0M [00:04&lt;02:05, 543kiB/s]
+  5%|▍         | 3.26M/71.0M [00:04&lt;01:37, 692kiB/s]
+  5%|▌         | 3.63M/71.0M [00:04&lt;01:09, 963kiB/s]
+  6%|▌         | 3.99M/71.0M [00:04&lt;00:52, 1.26MiB/s]
+  6%|▌         | 4.29M/71.0M [00:05&lt;00:47, 1.40MiB/s]
+  6%|▋         | 4.61M/71.0M [00:05&lt;00:39, 1.69MiB/s]
+  7%|▋         | 4.95M/71.0M [00:05&lt;00:33, 1.98MiB/s]
+  7%|▋         | 5.27M/71.0M [00:05&lt;00:30, 2.13MiB/s]
+  8%|▊         | 5.55M/71.0M [00:05&lt;00:29, 2.20MiB/s]
+  8%|▊         | 5.90M/71.0M [00:05&lt;00:26, 2.44MiB/s]
+  9%|▉         | 6.27M/71.0M [00:05&lt;00:23, 2.74MiB/s]
+  9%|▉         | 6.58M/71.0M [00:05&lt;00:25, 2.52MiB/s]
+ 10%|▉         | 6.91M/71.0M [00:05&lt;00:23, 2.68MiB/s]
+ 10%|█         | 7.27M/71.0M [00:06&lt;00:21, 2.92MiB/s]
+ 11%|█         | 7.58M/71.0M [00:06&lt;00:24, 2.63MiB/s]
+ 11%|█         | 7.92M/71.0M [00:06&lt;00:22, 2.81MiB/s]
+ 12%|█▏        | 8.22M/71.0M [00:06&lt;00:21, 2.86MiB/s]
+ 12%|█▏        | 8.55M/71.0M [00:06&lt;00:20, 2.98MiB/s]
+ 12%|█▏        | 8.86M/71.0M [00:06&lt;00:23, 2.66MiB/s]
+ 13%|█▎        | 9.20M/71.0M [00:06&lt;00:21, 2.81MiB/s]
+ 13%|█▎        | 9.54M/71.0M [00:06&lt;00:20, 2.96MiB/s]
+ 14%|█▍        | 9.84M/71.0M [00:06&lt;00:21, 2.84MiB/s]
+ 14%|█▍        | 10.1M/71.0M [00:07&lt;00:22, 2.69MiB/s]
+ 15%|█▍        | 10.5M/71.0M [00:07&lt;00:21, 2.85MiB/s]
+ 15%|█▌        | 10.8M/71.0M [00:07&lt;00:20, 2.92MiB/s]
+ 16%|█▌        | 11.1M/71.0M [00:07&lt;00:19, 3.01MiB/s]
+ 16%|█▌        | 11.4M/71.0M [00:07&lt;00:22, 2.69MiB/s]
+ 17%|█▋        | 11.7M/71.0M [00:07&lt;00:21, 2.80MiB/s]
+ 17%|█▋        | 12.0M/71.0M [00:07&lt;00:20, 2.90MiB/s]
+ 17%|█▋        | 12.4M/71.0M [00:07&lt;00:19, 2.99MiB/s]
+ 18%|█▊        | 12.7M/71.0M [00:07&lt;00:21, 2.67MiB/s]
+ 18%|█▊        | 13.0M/71.0M [00:08&lt;00:20, 2.83MiB/s]
+ 19%|█▊        | 13.3M/71.0M [00:08&lt;00:19, 2.91MiB/s]
+ 19%|█▉        | 13.6M/71.0M [00:08&lt;00:19, 2.98MiB/s]
+ 20%|█▉        | 13.9M/71.0M [00:08&lt;00:19, 2.88MiB/s]
+ 20%|██        | 14.2M/71.0M [00:08&lt;00:21, 2.70MiB/s]
+ 20%|██        | 14.5M/71.0M [00:08&lt;00:20, 2.82MiB/s]
+ 21%|██        | 14.8M/71.0M [00:08&lt;00:19, 2.92MiB/s]
+ 21%|██▏       | 15.2M/71.0M [00:08&lt;00:18, 2.98MiB/s]
+ 22%|██▏       | 15.5M/71.0M [00:08&lt;00:20, 2.69MiB/s]
+ 22%|██▏       | 15.8M/71.0M [00:09&lt;00:19, 2.83MiB/s]
+ 23%|██▎       | 16.1M/71.0M [00:09&lt;00:18, 2.92MiB/s]
+ 23%|██▎       | 16.4M/71.0M [00:09&lt;00:18, 2.97MiB/s]
+ 24%|██▎       | 16.7M/71.0M [00:09&lt;00:20, 2.68MiB/s]
+ 24%|██▍       | 17.1M/71.0M [00:09&lt;00:18, 2.85MiB/s]
+ 24%|██▍       | 17.4M/71.0M [00:09&lt;00:18, 2.91MiB/s]
+ 25%|██▍       | 17.7M/71.0M [00:09&lt;00:17, 2.97MiB/s]
+ 25%|██▌       | 18.0M/71.0M [00:09&lt;00:19, 2.69MiB/s]
+ 26%|██▌       | 18.3M/71.0M [00:09&lt;00:18, 2.84MiB/s]
+ 26%|██▋       | 18.6M/71.0M [00:10&lt;00:18, 2.91MiB/s]
+ 27%|██▋       | 19.0M/71.0M [00:10&lt;00:17, 2.98MiB/s]
+ 27%|██▋       | 19.3M/71.0M [00:10&lt;00:19, 2.68MiB/s]
+ 28%|██▊       | 19.6M/71.0M [00:10&lt;00:18, 2.79MiB/s]
+ 28%|██▊       | 19.9M/71.0M [00:10&lt;00:17, 2.90MiB/s]
+ 28%|██▊       | 20.2M/71.0M [00:10&lt;00:17, 2.93MiB/s]
+ 29%|██▉       | 20.5M/71.0M [00:10&lt;00:17, 2.91MiB/s]
+ 29%|██▉       | 20.8M/71.0M [00:10&lt;00:18, 2.71MiB/s]
+ 30%|██▉       | 21.1M/71.0M [00:10&lt;00:18, 2.75MiB/s]
+ 30%|███       | 21.4M/71.0M [00:10&lt;00:17, 2.78MiB/s]
+ 31%|███       | 21.7M/71.0M [00:11&lt;00:17, 2.82MiB/s]
+ 31%|███       | 22.0M/71.0M [00:11&lt;00:17, 2.87MiB/s]
+ 31%|███▏      | 22.3M/71.0M [00:11&lt;00:17, 2.86MiB/s]
+ 32%|███▏      | 22.6M/71.0M [00:11&lt;00:17, 2.75MiB/s]
+ 32%|███▏      | 22.9M/71.0M [00:11&lt;00:17, 2.80MiB/s]
+ 33%|███▎      | 23.2M/71.0M [00:11&lt;00:16, 2.82MiB/s]
+ 33%|███▎      | 23.5M/71.0M [00:11&lt;00:16, 2.86MiB/s]
+ 33%|███▎      | 23.8M/71.0M [00:11&lt;00:16, 2.90MiB/s]
+ 34%|███▍      | 24.0M/71.0M [00:11&lt;00:16, 2.90MiB/s]
+ 34%|███▍      | 24.3M/71.0M [00:12&lt;00:16, 2.77MiB/s]
+ 35%|███▍      | 24.6M/71.0M [00:12&lt;00:16, 2.83MiB/s]
+ 35%|███▌      | 24.9M/71.0M [00:12&lt;00:16, 2.82MiB/s]
+ 36%|███▌      | 25.2M/71.0M [00:12&lt;00:15, 2.86MiB/s]
+ 36%|███▌      | 25.5M/71.0M [00:12&lt;00:15, 2.94MiB/s]
+ 36%|███▋      | 25.8M/71.0M [00:12&lt;00:15, 2.91MiB/s]
+ 37%|███▋      | 26.1M/71.0M [00:12&lt;00:16, 2.79MiB/s]
+ 37%|███▋      | 26.4M/71.0M [00:12&lt;00:15, 2.81MiB/s]
+ 38%|███▊      | 26.7M/71.0M [00:12&lt;00:15, 2.82MiB/s]
+ 38%|███▊      | 27.0M/71.0M [00:12&lt;00:15, 2.84MiB/s]
+ 38%|███▊      | 27.3M/71.0M [00:13&lt;00:15, 2.91MiB/s]
+ 39%|███▉      | 27.6M/71.0M [00:13&lt;00:14, 2.90MiB/s]
+ 39%|███▉      | 27.9M/71.0M [00:13&lt;00:15, 2.79MiB/s]
+ 40%|███▉      | 28.2M/71.0M [00:13&lt;00:15, 2.79MiB/s]
+ 40%|████      | 28.5M/71.0M [00:13&lt;00:15, 2.82MiB/s]
+ 41%|████      | 28.8M/71.0M [00:13&lt;00:14, 2.85MiB/s]
+ 41%|████      | 29.1M/71.0M [00:13&lt;00:14, 2.88MiB/s]
+ 41%|████▏     | 29.4M/71.0M [00:13&lt;00:14, 2.90MiB/s]
+ 42%|████▏     | 29.7M/71.0M [00:13&lt;00:14, 2.92MiB/s]
+ 42%|████▏     | 30.0M/71.0M [00:14&lt;00:14, 2.80MiB/s]
+ 43%|████▎     | 30.2M/71.0M [00:14&lt;00:14, 2.82MiB/s]
+ 43%|████▎     | 30.5M/71.0M [00:14&lt;00:14, 2.84MiB/s]
+ 43%|████▎     | 30.8M/71.0M [00:14&lt;00:14, 2.85MiB/s]
+ 44%|████▍     | 31.1M/71.0M [00:14&lt;00:13, 2.91MiB/s]
+ 44%|████▍     | 31.4M/71.0M [00:14&lt;00:13, 2.91MiB/s]
+ 45%|████▍     | 31.7M/71.0M [00:14&lt;00:13, 2.82MiB/s]
+ 45%|████▌     | 32.0M/71.0M [00:14&lt;00:13, 2.81MiB/s]
+ 46%|████▌     | 32.3M/71.0M [00:14&lt;00:13, 2.84MiB/s]
+ 46%|████▌     | 32.6M/71.0M [00:14&lt;00:13, 2.84MiB/s]
+ 46%|████▋     | 32.9M/71.0M [00:15&lt;00:13, 2.82MiB/s]
+ 47%|████▋     | 33.2M/71.0M [00:15&lt;00:12, 2.95MiB/s]
+ 47%|████▋     | 33.5M/71.0M [00:15&lt;00:13, 2.83MiB/s]
+ 48%|████▊     | 33.8M/71.0M [00:15&lt;00:13, 2.81MiB/s]
+ 48%|████▊     | 34.1M/71.0M [00:15&lt;00:12, 2.86MiB/s]
+ 48%|████▊     | 34.4M/71.0M [00:15&lt;00:13, 2.77MiB/s]
+ 49%|████▉     | 34.7M/71.0M [00:15&lt;00:12, 2.89MiB/s]
+ 49%|████▉     | 35.0M/71.0M [00:15&lt;00:12, 2.83MiB/s]
+ 50%|████▉     | 35.3M/71.0M [00:15&lt;00:12, 2.83MiB/s]
+ 50%|█████     | 35.6M/71.0M [00:15&lt;00:12, 2.86MiB/s]
+ 51%|█████     | 35.9M/71.0M [00:16&lt;00:12, 2.83MiB/s]
+ 51%|█████     | 36.2M/71.0M [00:16&lt;00:12, 2.83MiB/s]
+ 51%|█████▏    | 36.5M/71.0M [00:16&lt;00:11, 2.91MiB/s]
+ 52%|█████▏    | 36.8M/71.0M [00:16&lt;00:12, 2.83MiB/s]
+ 52%|█████▏    | 37.1M/71.0M [00:16&lt;00:12, 2.74MiB/s]
+ 53%|█████▎    | 37.4M/71.0M [00:16&lt;00:11, 2.86MiB/s]
+ 53%|█████▎    | 37.7M/71.0M [00:16&lt;00:11, 2.86MiB/s]
+ 54%|█████▎    | 38.0M/71.0M [00:16&lt;00:11, 2.90MiB/s]
+ 54%|█████▍    | 38.3M/71.0M [00:16&lt;00:11, 2.86MiB/s]
+ 54%|█████▍    | 38.6M/71.0M [00:17&lt;00:11, 2.76MiB/s]
+ 55%|█████▍    | 38.9M/71.0M [00:17&lt;00:11, 2.85MiB/s]
+ 55%|█████▌    | 39.2M/71.0M [00:17&lt;00:11, 2.86MiB/s]
+ 56%|█████▌    | 39.5M/71.0M [00:17&lt;00:10, 2.89MiB/s]
+ 56%|█████▌    | 39.8M/71.0M [00:17&lt;00:10, 2.87MiB/s]
+ 57%|█████▋    | 40.1M/71.0M [00:17&lt;00:11, 2.78MiB/s]
+ 57%|█████▋    | 40.4M/71.0M [00:17&lt;00:10, 2.86MiB/s]
+ 57%|█████▋    | 40.7M/71.0M [00:17&lt;00:10, 2.86MiB/s]
+ 58%|█████▊    | 41.0M/71.0M [00:17&lt;00:10, 2.90MiB/s]
+ 58%|█████▊    | 41.3M/71.0M [00:17&lt;00:10, 2.95MiB/s]
+ 59%|█████▊    | 41.6M/71.0M [00:18&lt;00:10, 2.87MiB/s]
+ 59%|█████▉    | 41.9M/71.0M [00:18&lt;00:10, 2.78MiB/s]
+ 59%|█████▉    | 42.2M/71.0M [00:18&lt;00:10, 2.84MiB/s]
+ 60%|█████▉    | 42.5M/71.0M [00:18&lt;00:10, 2.84MiB/s]
+ 60%|██████    | 42.8M/71.0M [00:18&lt;00:09, 2.92MiB/s]
+ 61%|██████    | 43.1M/71.0M [00:18&lt;00:09, 2.86MiB/s]
+ 61%|██████    | 43.4M/71.0M [00:18&lt;00:09, 2.76MiB/s]
+ 62%|██████▏   | 43.7M/71.0M [00:18&lt;00:09, 2.86MiB/s]
+ 62%|██████▏   | 44.0M/71.0M [00:18&lt;00:09, 2.84MiB/s]
+ 62%|██████▏   | 44.4M/71.0M [00:19&lt;00:09, 2.94MiB/s]
+ 63%|██████▎   | 44.7M/71.0M [00:19&lt;00:09, 2.86MiB/s]
+ 63%|██████▎   | 44.9M/71.0M [00:19&lt;00:09, 2.77MiB/s]
+ 64%|██████▍   | 45.3M/71.0M [00:19&lt;00:09, 2.86MiB/s]
+ 64%|██████▍   | 45.5M/71.0M [00:19&lt;00:08, 2.87MiB/s]
+ 65%|██████▍   | 45.8M/71.0M [00:19&lt;00:08, 2.83MiB/s]
+ 65%|██████▍   | 46.1M/71.0M [00:19&lt;00:08, 2.82MiB/s]
+ 65%|██████▌   | 46.4M/71.0M [00:19&lt;00:08, 2.90MiB/s]
+ 66%|██████▌   | 46.7M/71.0M [00:19&lt;00:08, 2.79MiB/s]
+ 66%|██████▌   | 47.0M/71.0M [00:20&lt;00:08, 2.82MiB/s]
+ 67%|██████▋   | 47.3M/71.0M [00:20&lt;00:08, 2.87MiB/s]
+ 67%|██████▋   | 47.6M/71.0M [00:20&lt;00:08, 2.86MiB/s]
+ 67%|██████▋   | 47.9M/71.0M [00:20&lt;00:08, 2.84MiB/s]
+ 68%|██████▊   | 48.2M/71.0M [00:20&lt;00:07, 2.89MiB/s]
+ 68%|██████▊   | 48.5M/71.0M [00:20&lt;00:08, 2.80MiB/s]
+ 69%|██████▊   | 48.8M/71.0M [00:20&lt;00:07, 2.82MiB/s]
+ 69%|██████▉   | 49.1M/71.0M [00:20&lt;00:07, 2.87MiB/s]
+ 70%|██████▉   | 49.4M/71.0M [00:20&lt;00:07, 2.86MiB/s]
+ 70%|██████▉   | 49.7M/71.0M [00:20&lt;00:07, 2.84MiB/s]
+ 70%|███████   | 50.0M/71.0M [00:21&lt;00:07, 2.89MiB/s]
+ 71%|███████   | 50.3M/71.0M [00:21&lt;00:07, 2.80MiB/s]
+ 71%|███████   | 50.6M/71.0M [00:21&lt;00:07, 2.84MiB/s]
+ 72%|███████▏  | 50.9M/71.0M [00:21&lt;00:06, 2.89MiB/s]
+ 72%|███████▏  | 51.2M/71.0M [00:21&lt;00:06, 2.87MiB/s]
+ 73%|███████▎  | 51.5M/71.0M [00:21&lt;00:06, 2.84MiB/s]
+ 73%|███████▎  | 51.8M/71.0M [00:21&lt;00:06, 2.88MiB/s]
+ 73%|███████▎  | 52.1M/71.0M [00:21&lt;00:06, 2.76MiB/s]
+ 74%|███████▍  | 52.4M/71.0M [00:21&lt;00:06, 2.85MiB/s]
+ 74%|███████▍  | 52.7M/71.0M [00:21&lt;00:06, 2.90MiB/s]
+ 75%|███████▍  | 53.0M/71.0M [00:22&lt;00:06, 2.88MiB/s]
+ 75%|███████▌  | 53.2M/71.0M [00:22&lt;00:06, 2.86MiB/s]
+ 75%|███████▌  | 53.5M/71.0M [00:22&lt;00:06, 2.89MiB/s]
+ 76%|███████▌  | 53.8M/71.0M [00:22&lt;00:06, 2.75MiB/s]
+ 76%|███████▋  | 54.1M/71.0M [00:22&lt;00:05, 2.81MiB/s]
+ 77%|███████▋  | 54.5M/71.0M [00:22&lt;00:05, 2.89MiB/s]
+ 77%|███████▋  | 54.7M/71.0M [00:24&lt;00:32, 506kiB/s]
+ 78%|███████▊  | 55.0M/71.0M [00:24&lt;00:25, 631kiB/s]
+ 78%|███████▊  | 55.3M/71.0M [00:24&lt;00:18, 848kiB/s]
+ 78%|███████▊  | 55.7M/71.0M [00:24&lt;00:13, 1.13MiB/s]
+ 79%|███████▉  | 56.0M/71.0M [00:24&lt;00:10, 1.40MiB/s]
+ 79%|███████▉  | 56.3M/71.0M [00:24&lt;00:09, 1.53MiB/s]
+ 80%|███████▉  | 56.6M/71.0M [00:25&lt;00:07, 1.82MiB/s]
+ 80%|████████  | 56.9M/71.0M [00:25&lt;00:06, 2.13MiB/s]
+ 81%|████████  | 57.3M/71.0M [00:25&lt;00:05, 2.38MiB/s]
+ 81%|████████  | 57.6M/71.0M [00:25&lt;00:05, 2.29MiB/s]
+ 82%|████████▏ | 57.9M/71.0M [00:25&lt;00:05, 2.50MiB/s]
+ 82%|████████▏ | 58.2M/71.0M [00:25&lt;00:04, 2.71MiB/s]
+ 82%|████████▏ | 58.5M/71.0M [00:25&lt;00:04, 2.80MiB/s]
+ 83%|████████▎ | 58.8M/71.0M [00:25&lt;00:04, 2.58MiB/s]
+ 83%|████████▎ | 59.1M/71.0M [00:25&lt;00:04, 2.67MiB/s]
+ 84%|████████▍ | 59.4M/71.0M [00:26&lt;00:04, 2.78MiB/s]
+ 84%|████████▍ | 59.7M/71.0M [00:26&lt;00:03, 2.82MiB/s]
+ 85%|████████▍ | 60.1M/71.0M [00:26&lt;00:03, 2.97MiB/s]
+ 85%|████████▌ | 60.4M/71.0M [00:26&lt;00:03, 2.69MiB/s]
+ 85%|████████▌ | 60.7M/71.0M [00:26&lt;00:03, 2.64MiB/s]
+ 86%|████████▌ | 61.0M/71.0M [00:26&lt;00:03, 2.75MiB/s]
+ 86%|████████▋ | 61.3M/71.0M [00:26&lt;00:03, 2.82MiB/s]
+ 87%|████████▋ | 61.6M/71.0M [00:26&lt;00:03, 2.92MiB/s]
+ 87%|████████▋ | 61.9M/71.0M [00:26&lt;00:03, 2.79MiB/s]
+ 88%|████████▊ | 62.2M/71.0M [00:27&lt;00:03, 2.79MiB/s]
+ 88%|████████▊ | 62.5M/71.0M [00:27&lt;00:03, 2.77MiB/s]
+ 88%|████████▊ | 62.8M/71.0M [00:27&lt;00:02, 2.86MiB/s]
+ 89%|████████▉ | 63.1M/71.0M [00:27&lt;00:02, 2.96MiB/s]
+ 89%|████████▉ | 63.4M/71.0M [00:27&lt;00:02, 2.81MiB/s]
+ 90%|████████▉ | 63.7M/71.0M [00:27&lt;00:02, 2.81MiB/s]
+ 90%|█████████ | 64.0M/71.0M [00:27&lt;00:02, 2.81MiB/s]
+ 91%|█████████ | 64.3M/71.0M [00:27&lt;00:02, 2.86MiB/s]
+ 91%|█████████ | 64.6M/71.0M [00:27&lt;00:02, 2.90MiB/s]
+ 91%|█████████▏| 64.9M/71.0M [00:27&lt;00:02, 2.88MiB/s]
+ 92%|█████████▏| 65.2M/71.0M [00:28&lt;00:02, 2.83MiB/s]
+ 92%|█████████▏| 65.5M/71.0M [00:28&lt;00:01, 2.86MiB/s]
+ 93%|█████████▎| 65.8M/71.0M [00:28&lt;00:01, 2.78MiB/s]
+ 93%|█████████▎| 66.0M/71.0M [00:28&lt;00:01, 2.80MiB/s]
+ 93%|█████████▎| 66.3M/71.0M [00:28&lt;00:01, 2.84MiB/s]
+ 94%|█████████▍| 66.6M/71.0M [00:28&lt;00:01, 2.89MiB/s]
+ 94%|█████████▍| 67.0M/71.0M [00:28&lt;00:01, 2.85MiB/s]
+ 95%|█████████▍| 67.2M/71.0M [00:28&lt;00:01, 2.88MiB/s]
+ 95%|█████████▌| 67.5M/71.0M [00:28&lt;00:01, 2.79MiB/s]
+ 96%|█████████▌| 67.8M/71.0M [00:28&lt;00:01, 2.78MiB/s]
+ 96%|█████████▌| 68.1M/71.0M [00:29&lt;00:01, 2.79MiB/s]
+ 96%|█████████▋| 68.4M/71.0M [00:29&lt;00:00, 2.81MiB/s]
+ 97%|█████████▋| 68.7M/71.0M [00:29&lt;00:00, 2.80MiB/s]
+ 97%|█████████▋| 69.0M/71.0M [00:29&lt;00:00, 2.83MiB/s]
+ 98%|█████████▊| 69.3M/71.0M [00:29&lt;00:00, 2.86MiB/s]
+ 98%|█████████▊| 69.5M/71.0M [00:29&lt;00:00, 2.85MiB/s]
+ 98%|█████████▊| 69.8M/71.0M [00:29&lt;00:00, 2.85MiB/s]
+ 99%|█████████▉| 70.1M/71.0M [00:29&lt;00:00, 2.83MiB/s]
+ 99%|█████████▉| 70.4M/71.0M [00:29&lt;00:00, 2.84MiB/s]
+100%|█████████▉| 70.7M/71.0M [00:30&lt;00:00, 2.83MiB/s]
+100%|██████████| 71.0M/71.0M [00:30&lt;00:00, 2.36MiB/s]
+CBSD500 dataset downloaded in datasets
+Downloading datasets/set3c.zip
+
+  0%|          | 0.00/385k [00:00&lt;?, ?iB/s]
+ 25%|██▍       | 95.2k/385k [00:00&lt;00:00, 653kiB/s]
+ 60%|██████    | 232k/385k [00:00&lt;00:00, 1.01MiB/s]
+100%|██████████| 385k/385k [00:00&lt;00:00, 1.36MiB/s]
+set3c dataset downloaded in datasets
+Computing train measurement vectors from base dataset...
+
+  0%|          | 0/1 [00:00&lt;?, ?it/s]
+100%|██████████| 1/1 [00:00&lt;00:00, 36.59it/s]
+Computing test measurement vectors from base dataset...
+
+  0%|          | 0/1 [00:00&lt;?, ?it/s]
+100%|██████████| 1/1 [00:00&lt;00:00, 82.96it/s]
+Dataset has been saved in measurements/CBSD500/super-resolution
+</pre></div>
+</div>
+</section>
+<section id="define-the-unfolded-pnp-algorithm">
+<h2>Define the unfolded PnP algorithm.<a class="headerlink" href="#define-the-unfolded-pnp-algorithm" title="Link to this heading"></a></h2>
+<p>We use the helper function <a class="reference internal" href="../../stubs/deepinv.unfolded.unfolded_builder.html#deepinv.unfolded.unfolded_builder" title="deepinv.unfolded.unfolded_builder"><code class="xref py py-meth docutils literal notranslate"><span class="pre">deepinv.unfolded.unfolded_builder()</span></code></a> to defined the Unfolded architecture.
+The chosen algorithm is here DRS (Douglas-Rachford Splitting).
+Note that if the prior (resp. a parameter) is initialized with a list of lenght max_iter,
+then a distinct model (resp. parameter) is trained for each iteration.
+For fixed trained model prior (resp. parameter) across iterations, initialize with a single element.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Unrolled optimization algorithm parameters</span>
+<a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">max_iter</span></a> <span class="o">=</span> <span class="mi">5</span>  <span class="c1"># number of unfolded layers</span>
+
+<span class="c1"># Select the data fidelity term</span>
+<span class="n">data_fidelity</span> <span class="o">=</span> <a href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">L2</span></a><span class="p">()</span>
+
+<span class="c1"># Set up the trainable denoising prior</span>
+<span class="c1"># Here the prior model is common for all iterations</span>
+<span class="n">prior</span> <span class="o">=</span> <a href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">PnP</span></a><span class="p">(</span><span class="n">denoiser</span><span class="o">=</span><a href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">dinv</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">DnCNN</span></a><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">train</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">))</span>
+
+<span class="c1"># The parameters are initialized with a list of length max_iter, so that a distinct parameter is trained for each iteration.</span>
+<a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">lamb</span></a> <span class="o">=</span> <span class="p">[</span>
+    <span class="mf">1.0</span>
+<span class="p">]</span> <span class="o">*</span> <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">max_iter</span></a>  <span class="c1"># regularization parameter (multiplier of the data fidelity term)</span>
+<a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">stepsize</span></a> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span> <span class="o">*</span> <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">max_iter</span></a>  <span class="c1"># stepsize of the algorithm</span>
+<a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sigma_denoiser</span></a> <span class="o">=</span> <span class="p">[</span><span class="mf">0.01</span><span class="p">]</span> <span class="o">*</span> <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">max_iter</span></a>  <span class="c1"># noise level parameter of the denoiser</span>
+<a href="https://docs.python.org/3.4/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">beta</span></a> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># relaxation parameter of the Douglas-Rachford splitting</span>
+<a href="https://docs.python.org/3.4/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">params_algo</span></a> <span class="o">=</span> <span class="p">{</span>  <span class="c1"># wrap all the restoration parameters in a &#39;params_algo&#39; dictionary</span>
+    <span class="s2">&quot;stepsize&quot;</span><span class="p">:</span> <a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">stepsize</span></a><span class="p">,</span>
+    <span class="s2">&quot;lambda&quot;</span><span class="p">:</span> <a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">lamb</span></a><span class="p">,</span>
+    <span class="s2">&quot;g_param&quot;</span><span class="p">:</span> <a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">sigma_denoiser</span></a><span class="p">,</span>
+    <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <a href="https://docs.python.org/3.4/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">beta</span></a><span class="p">,</span>
+<span class="p">}</span>
+<a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trainable_params</span></a> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;lambda&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;g_param&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;stepsize&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;beta&quot;</span><span class="p">,</span>
+<span class="p">]</span>  <span class="c1"># define which parameters from &#39;params_algo&#39; are trainable</span>
+
+<span class="c1"># Logging parameters</span>
+<a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">verbose</span></a> <span class="o">=</span> <span class="kc">True</span>
+<a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">wandb_vis</span></a> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># plot curves and images in Weight&amp;Bias</span>
+
+<span class="c1"># Define the unfolded trainable model.</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">unfolded_builder</span><span class="p">(</span>
+    <span class="n">iteration</span><span class="o">=</span><span class="s2">&quot;DRS&quot;</span><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">params_algo</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">params_algo</span></a><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+    <a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trainable_params</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">trainable_params</span></a><span class="p">,</span>
+    <span class="n">data_fidelity</span><span class="o">=</span><span class="n">data_fidelity</span><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">max_iter</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">max_iter</span></a><span class="p">,</span>
+    <span class="n">prior</span><span class="o">=</span><span class="n">prior</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="define-the-training-parameters">
+<h2>Define the training parameters.<a class="headerlink" href="#define-the-training-parameters" title="Link to this heading"></a></h2>
+<p>We use the Adam optimizer and the StepLR scheduler.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># training parameters</span>
+<a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">epochs</span></a> <span class="o">=</span> <span class="mi">10</span> <span class="k">if</span> <a href="https://pytorch.org/docs/2.0/generated/torch.cuda.is_available.html#torch.cuda.is_available" title="torch.cuda.is_available" class="sphx-glr-backref-module-torch-cuda sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="mi">2</span>
+<a href="https://docs.python.org/3.4/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">learning_rate</span></a> <span class="o">=</span> <span class="mf">5e-4</span>
+<a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">train_batch_size</span></a> <span class="o">=</span> <span class="mi">32</span> <span class="k">if</span> <a href="https://pytorch.org/docs/2.0/generated/torch.cuda.is_available.html#torch.cuda.is_available" title="torch.cuda.is_available" class="sphx-glr-backref-module-torch-cuda sphx-glr-backref-type-py-function"><span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span></a><span class="p">()</span> <span class="k">else</span> <span class="mi">1</span>
+<a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">test_batch_size</span></a> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="c1"># choose optimizer and scheduler</span>
+<a href="https://pytorch.org/docs/2.0/generated/torch.optim.Adam.html#torch.optim.Adam" title="torch.optim.Adam" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">optimizer</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/2.0/generated/torch.optim.Adam.html#torch.optim.Adam" title="torch.optim.Adam" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span></a><span class="p">(</span><a href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module.parameters" title="torch.nn.Module.parameters" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-method"><span class="n">model</span><span class="o">.</span><span class="n">parameters</span></a><span class="p">(),</span> <span class="n">lr</span><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#float" title="builtins.float" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">learning_rate</span></a><span class="p">,</span> <span class="n">weight_decay</span><span class="o">=</span><span class="mf">1e-8</span><span class="p">)</span>
+<a href="https://pytorch.org/docs/2.0/generated/torch.optim.lr_scheduler.StepLR.html#torch.optim.lr_scheduler.StepLR" title="torch.optim.lr_scheduler.StepLR" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">scheduler</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/2.0/generated/torch.optim.lr_scheduler.StepLR.html#torch.optim.lr_scheduler.StepLR" title="torch.optim.lr_scheduler.StepLR" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class"><span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">StepLR</span></a><span class="p">(</span><a href="https://pytorch.org/docs/2.0/generated/torch.optim.Adam.html#torch.optim.Adam" title="torch.optim.Adam" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">optimizer</span></a><span class="p">,</span> <span class="n">step_size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">epochs</span></a> <span class="o">*</span> <span class="mf">0.8</span><span class="p">))</span>
+
+<span class="c1"># choose supervised training loss</span>
+<a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">losses</span></a> <span class="o">=</span> <span class="p">[</span><a href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module" title="torch.nn.Module" class="sphx-glr-backref-module-torch-nn sphx-glr-backref-type-py-class"><span class="n">dinv</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">SupLoss</span></a><span class="p">(</span><span class="n">metric</span><span class="o">=</span><span class="n">dinv</span><span class="o">.</span><span class="n">metric</span><span class="o">.</span><span class="n">mse</span><span class="p">())]</span>
+
+<a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">train_dataloader</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">DataLoader</span></a><span class="p">(</span>
+    <span class="n">train_dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">train_batch_size</span></a><span class="p">,</span> <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_workers</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_workers</span></a><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+<a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">test_dataloader</span></a> <span class="o">=</span> <a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class"><span class="n">DataLoader</span></a><span class="p">(</span>
+    <span class="n">test_dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">test_batch_size</span></a><span class="p">,</span> <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_workers</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">num_workers</span></a><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="train-the-network">
+<h2>Train the network<a class="headerlink" href="#train-the-network" title="Link to this heading"></a></h2>
+<p>We train the network using the library’s train function.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">train</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">train_dataloader</span></a><span class="o">=</span><a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">train_dataloader</span></a><span class="p">,</span>
+    <span class="n">eval_dataloader</span><span class="o">=</span><a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">test_dataloader</span></a><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">epochs</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#int" title="builtins.int" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">epochs</span></a><span class="p">,</span>
+    <a href="https://pytorch.org/docs/2.0/generated/torch.optim.lr_scheduler.StepLR.html#torch.optim.lr_scheduler.StepLR" title="torch.optim.lr_scheduler.StepLR" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">scheduler</span></a><span class="o">=</span><a href="https://pytorch.org/docs/2.0/generated/torch.optim.lr_scheduler.StepLR.html#torch.optim.lr_scheduler.StepLR" title="torch.optim.lr_scheduler.StepLR" class="sphx-glr-backref-module-torch-optim-lr_scheduler sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">scheduler</span></a><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">losses</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">losses</span></a><span class="p">,</span>
+    <span class="n">physics</span><span class="o">=</span><span class="n">physics</span><span class="p">,</span>
+    <a href="https://pytorch.org/docs/2.0/generated/torch.optim.Adam.html#torch.optim.Adam" title="torch.optim.Adam" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">optimizer</span></a><span class="o">=</span><a href="https://pytorch.org/docs/2.0/generated/torch.optim.Adam.html#torch.optim.Adam" title="torch.optim.Adam" class="sphx-glr-backref-module-torch-optim sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">optimizer</span></a><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">,</span>
+    <span class="n">save_path</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">CKPT_DIR</span></a> <span class="o">/</span> <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">operation</span></a><span class="p">),</span>
+    <a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">verbose</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">verbose</span></a><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">wandb_vis</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">wandb_vis</span></a><span class="p">,</span>  <span class="c1"># training visualization can be done in Weight&amp;Bias</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>The model has 188179 trainable parameters
+        23-10-24-10:26:56       [1/2]   loss=7.86e-03   Loss_sup=7.86e-03       Train_psnr_model=22.29  Eval_psnr_model=17.20
+        23-10-24-10:26:57       [2/2]   loss=6.76e-03   Loss_sup=6.76e-03       Train_psnr_model=23.30  Eval_psnr_model=17.29
+
+BaseUnfold(
+  (fixed_point): FixedPoint(
+    (iterator): DRSIteration(
+      (f_step): fStepDRS()
+      (g_step): gStepDRS()
+    )
+  )
+  (init_params_algo): ParameterDict(
+      (beta): Object of type: ParameterList
+      (g_param): Object of type: ParameterList
+      (lambda): Object of type: ParameterList
+      (stepsize): Object of type: ParameterList
+    (beta): ParameterList(  (0): Parameter containing: [torch.float32 of size ])
+    (g_param): ParameterList(
+        (0): Parameter containing: [torch.float32 of size ]
+        (1): Parameter containing: [torch.float32 of size ]
+        (2): Parameter containing: [torch.float32 of size ]
+        (3): Parameter containing: [torch.float32 of size ]
+        (4): Parameter containing: [torch.float32 of size ]
+    )
+    (lambda): ParameterList(
+        (0): Parameter containing: [torch.float32 of size ]
+        (1): Parameter containing: [torch.float32 of size ]
+        (2): Parameter containing: [torch.float32 of size ]
+        (3): Parameter containing: [torch.float32 of size ]
+        (4): Parameter containing: [torch.float32 of size ]
+    )
+    (stepsize): ParameterList(
+        (0): Parameter containing: [torch.float32 of size ]
+        (1): Parameter containing: [torch.float32 of size ]
+        (2): Parameter containing: [torch.float32 of size ]
+        (3): Parameter containing: [torch.float32 of size ]
+        (4): Parameter containing: [torch.float32 of size ]
+    )
+  )
+  (params_algo): ParameterDict(
+      (beta): Object of type: ParameterList
+      (g_param): Object of type: ParameterList
+      (lambda): Object of type: ParameterList
+      (stepsize): Object of type: ParameterList
+    (beta): ParameterList(  (0): Parameter containing: [torch.float32 of size ])
+    (g_param): ParameterList(
+        (0): Parameter containing: [torch.float32 of size ]
+        (1): Parameter containing: [torch.float32 of size ]
+        (2): Parameter containing: [torch.float32 of size ]
+        (3): Parameter containing: [torch.float32 of size ]
+        (4): Parameter containing: [torch.float32 of size ]
+    )
+    (lambda): ParameterList(
+        (0): Parameter containing: [torch.float32 of size ]
+        (1): Parameter containing: [torch.float32 of size ]
+        (2): Parameter containing: [torch.float32 of size ]
+        (3): Parameter containing: [torch.float32 of size ]
+        (4): Parameter containing: [torch.float32 of size ]
+    )
+    (stepsize): ParameterList(
+        (0): Parameter containing: [torch.float32 of size ]
+        (1): Parameter containing: [torch.float32 of size ]
+        (2): Parameter containing: [torch.float32 of size ]
+        (3): Parameter containing: [torch.float32 of size ]
+        (4): Parameter containing: [torch.float32 of size ]
+    )
+  )
+  (prior): ModuleList(
+    (0): PnP(
+      (denoiser): DnCNN(
+        (in_conv): Conv2d(3, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (conv_list): ModuleList(
+          (0-4): 5 x Conv2d(64, 64, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        )
+        (out_conv): Conv2d(64, 3, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1))
+        (nl_list): ModuleList(
+          (0-5): 6 x ReLU()
+        )
+      )
+    )
+  )
+  (data_fidelity): ModuleList(
+    (0): L2()
+  )
+)
+</pre></div>
+</div>
+</section>
+<section id="test-the-network">
+<h2>Test the network<a class="headerlink" href="#test-the-network" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">method</span></a> <span class="o">=</span> <span class="s2">&quot;unfolded_drs&quot;</span>
+<a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">save_folder</span></a> <span class="o">=</span> <a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">RESULTS_DIR</span></a> <span class="o">/</span> <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">method</span></a> <span class="o">/</span> <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">operation</span></a>
+<a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">wandb_vis</span></a> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># plot curves and images in Weight&amp;Bias.</span>
+<a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">plot_images</span></a> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># plot images. Images are saved in save_folder.</span>
+<a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">plot_metrics</span></a> <span class="o">=</span> <span class="kc">True</span>  <span class="c1"># compute performance and convergence metrics along the algorithm, curved saved in RESULTS_DIR</span>
+
+<span class="n">test</span><span class="p">(</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+    <a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">test_dataloader</span></a><span class="o">=</span><a href="https://pytorch.org/docs/2.0/data.html#torch.utils.data.DataLoader" title="torch.utils.data.DataLoader" class="sphx-glr-backref-module-torch-utils-data sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">test_dataloader</span></a><span class="p">,</span>
+    <span class="n">physics</span><span class="o">=</span><span class="n">physics</span><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">device</span></a><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">plot_images</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">plot_images</span></a><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">save_folder</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">save_folder</span></a><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">verbose</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">verbose</span></a><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">plot_metrics</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">plot_metrics</span></a><span class="p">,</span>
+    <a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">wandb_vis</span></a><span class="o">=</span><a href="https://docs.python.org/3.4/library/functions.html#bool" title="builtins.bool" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">wandb_vis</span></a><span class="p">,</span>  <span class="c1"># test visualization can be done in Weight&amp;Bias</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<ul class="sphx-glr-horizontal">
+<li><img src="../../_images/sphx_glr_demo_vanilla_unfolded_001.png" srcset="../../_images/sphx_glr_demo_vanilla_unfolded_001.png" alt="Input, Linear, Recons., GT" class = "sphx-glr-multi-img"/></li>
+<li><img src="../../_images/sphx_glr_demo_vanilla_unfolded_002.png" srcset="../../_images/sphx_glr_demo_vanilla_unfolded_002.png" alt="$PSNR(x_k)$, Residual $\frac{||x_{k+1} - x_k||}{||x_k||}$" class = "sphx-glr-multi-img"/></li>
+</ul>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>Processing data of operator 1 out of 1
+
+  0%|          | 0/1 [00:00&lt;?, ?it/s]
+100%|██████████| 1/1 [00:04&lt;00:00,  4.14s/it]
+100%|██████████| 1/1 [00:04&lt;00:00,  4.14s/it]
+Test PSNR: Linear rec.: 6.00+-0.00 dB | Model: 17.29+-0.00 dB.
+
+(17.292417526245117, 0.0, 5.99602746963501, 0.0)
+</pre></div>
+</div>
+</section>
+<section id="plotting-the-trained-parameters">
+<h2>Plotting the trained parameters.<a class="headerlink" href="#plotting-the-trained-parameters" title="Link to this heading"></a></h2>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">dinv</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">plotting</span><span class="o">.</span><span class="n">plot_parameters</span><span class="p">(</span>
+    <span class="n">model</span><span class="p">,</span> <span class="n">init_params</span><span class="o">=</span><a href="https://docs.python.org/3.4/library/stdtypes.html#dict" title="builtins.dict" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">params_algo</span></a><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><a href="https://docs.python.org/3.4/library/pathlib.html#pathlib.PosixPath" title="pathlib.PosixPath" class="sphx-glr-backref-module-pathlib sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">RESULTS_DIR</span></a> <span class="o">/</span> <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">method</span></a> <span class="o">/</span> <a href="https://docs.python.org/3.4/library/stdtypes.html#str" title="builtins.str" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">operation</span></a>
+<span class="p">)</span>
+</pre></div>
+</div>
+<img src="../../_images/sphx_glr_demo_vanilla_unfolded_003.png" srcset="../../_images/sphx_glr_demo_vanilla_unfolded_003.png" alt="demo vanilla unfolded" class = "sphx-glr-single-img"/><p class="sphx-glr-timing"><strong>Total running time of the script:</strong> (0 minutes 40.712 seconds)</p>
+<div class="sphx-glr-footer sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-unfolded-demo-vanilla-unfolded-py">
+<div class="sphx-glr-download sphx-glr-download-python docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/aa635a7f9321b9a4a94be443b1752796/demo_vanilla_unfolded.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">demo_vanilla_unfolded.py</span></code></a></p>
+</div>
+<div class="sphx-glr-download sphx-glr-download-jupyter docutils container">
+<p><a class="reference download internal" download="" href="../../_downloads/d413f127f8fcdc4f25ebe8912dc1f800/demo_vanilla_unfolded.ipynb"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Jupyter</span> <span class="pre">notebook:</span> <span class="pre">demo_vanilla_unfolded.ipynb</span></code></a></p>
+</div>
+</div>
+<p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="demo_custom_prior_unfolded.html" class="btn btn-neutral float-left" title="Learned iterative custom prior" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="demo_DEQ.html" class="btn btn-neutral float-right" title="Deep Equilibrium (DEQ) algorithms for image deblurring" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, DeepInv.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NSEKFKYSGR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-NSEKFKYSGR', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

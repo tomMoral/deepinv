@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PnP and RED algorithms &mdash; deepinverse 0.1 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="_static/sg_gallery-rendered-html.css" type="text/css" />
+    <link rel="shortcut icon" href="_static/logo.ico"/>
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=888ff710"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script>window.MathJax = {"tex": {"equationNumbers": {"autoNumber": "AMS", "useLabelIds": true}, "macros": {"forw": ["{A\\left({#1}\\right)}", 1], "noise": ["{N\\left({#1}\\right)}", 1], "inverse": ["{R\\left({#1}\\right)}", 1], "inversef": ["{R\\left({#1},{#2}\\right)}", 2], "reg": ["{g\\left({#1}\\right)}", 1], "regname": "g", "sensor": ["{\\eta\\left({#1}\\right)}", 1], "datafid": ["{f\\left({#1},{#2}\\right)}", 2], "datafidname": "f", "distance": ["{d\\left({#1},{#2}\\right)}", 2], "distancename": "d", "denoiser": ["{\\operatorname{D}_{{#2}}\\left({#1}\\right)}", 2], "denoisername": "\\operatorname{D}", "xset": "\\mathcal{X}", "yset": "\\mathcal{Y}", "group": "\\mathcal{G}", "metric": ["{d\\left({#1},{#2}\\right)}", 2], "loss": ["{\\mathcal\\left({#1}\\right)}", 1]}}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Unfolded algorithms" href="deepinv.unfolded.html" />
+    <link rel="prev" title="gStepCP" href="stubs/deepinv.optim.optim_iterators.primal_dual_CP.gStepCP.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="index.html">
+            
+              <img src="_static/deepinv_logolarge.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="deepinv.physics.html">Physics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deepinv.datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deepinv.utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deepinv.models.html">Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deepinv.loss.html">Loss</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deepinv.optim.html">Optim</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">PnP and RED algorithms</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#priors-and-denoisers">Priors and denoisers</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="stubs/deepinv.optim.Prior.html">Prior</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stubs/deepinv.optim.PnP.html">PnP</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stubs/deepinv.optim.RED.html">RED</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stubs/deepinv.optim.ScorePrior.html">ScorePrior</a></li>
+<li class="toctree-l3"><a class="reference internal" href="stubs/deepinv.optim.Tikhonov.html">Tikhonov</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#iterators">Iterators</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="deepinv.unfolded.html">Unfolded algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deepinv.sampling.html">Sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deepinv.notation.html">Math Notation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="deepinv.contributing.html">How to Contribute</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">deepinverse</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">PnP and RED algorithms</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/deepinv.pnp.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="pnp-and-red-algorithms">
+<span id="pnp"></span><h1>PnP and RED algorithms<a class="headerlink" href="#pnp-and-red-algorithms" title="Link to this heading"></a></h1>
+<p>PnP and RED algorithms are optimization algorithms where optimisation steps on the prior term are replaced by denoising
+operators.</p>
+<p>When one replaces a proximity operator with a denoiser, the algorithm is called a Plug-and-Play (PnP) algorithm.
+For instance, a PnP proximal gradient descent (PnP-PGD) algorithm for solving the inverse problem
+<span class="math notranslate nohighlight">\(y = \noise{\forw{x}}\)</span> reads</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{equation*}
+\begin{aligned}
+u_{k} &amp;=  x_k - \gamma \lambda \nabla \datafid{x_k}{y} \\
+x_{k+1} &amp;= \denoiser{u_k}{\sigma},
+\end{aligned}
+\end{equation*}\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\datafidname\)</span> is a data-fidelity term and <span class="math notranslate nohighlight">\(\denoisername\)</span> is usually a denoiser, i.e. an operator
+(or algorithm, or neural network) aiming at removing gaussian random noise with standard deviation <span class="math notranslate nohighlight">\(\sigma\)</span>
+from an image.</p>
+<p>On the other hand, when one replaces a gradient step on the prior term with a denoising step, the algorithm is called a
+Regularization by Denoising (RED) algorithm. For instance, a RED proximal gradient descent (RED-PGD) algorithm for
+solving the inverse problem <span class="math notranslate nohighlight">\(y = \noise{\forw{x}}\)</span> reads</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{equation*}
+\begin{aligned}
+u_{k} &amp;=  x_k - \denoiser{x_k}{\sigma} \\
+x_{k+1} &amp;= \operatorname{prox}_{\datafidname(\cdot, y)}(u_k).
+\end{aligned}
+\end{equation*}\end{split}\]</div>
+<p>Under restrictive assumptions on the denoiser, PnP and RED algorithms can be shown to be solving
+minimization problems of the form</p>
+<div class="math notranslate nohighlight">
+\[\begin{equation*}
+\label{eq:min_prob}
+\underset{x}{\arg\min} \quad \lambda \datafid{x}{y} + g_{\theta}(x),
+\end{equation*}\]</div>
+<p>where the first term <span class="math notranslate nohighlight">\(\datafidname:\xset\times\yset \mapsto \mathbb{R}_{+}\)</span> enforces data-fidelity and the second
+term <span class="math notranslate nohighlight">\(g_{\theta}:\xset\mapsto \mathbb{R}_{+}\)</span> is a prior implicitely learned by the denoising operator
+<span class="math notranslate nohighlight">\(\denoisername\)</span>, parametrized by the learnable parameters <span class="math notranslate nohighlight">\(\theta\)</span> of the denoiser.</p>
+<p>As a consequence, PnP algorithms in deepinv inherit from <a class="reference internal" href="stubs/deepinv.optim.BaseOptim.html#deepinv.optim.BaseOptim" title="deepinv.optim.BaseOptim"><code class="xref py py-meth docutils literal notranslate"><span class="pre">deepinv.optim.BaseOptim()</span></code></a> where the prior term is
+replaced by a denoiser.</p>
+<section id="priors-and-denoisers">
+<h2>Priors and denoisers<a class="headerlink" href="#priors-and-denoisers" title="Link to this heading"></a></h2>
+<p>This is the base class for implementing prior functions <span class="math notranslate nohighlight">\(\reg{x}\)</span> where <span class="math notranslate nohighlight">\(x\in\xset\)</span> is a variable and
+where <span class="math notranslate nohighlight">\(\regname\)</span> is a function. It also encompasses implicitely defined priors, such as the ones arising in
+PnP and RED algorithms and where the prior function <span class="math notranslate nohighlight">\(\operatorname{prox}_{\regname}\)</span> (resp.
+<span class="math notranslate nohighlight">\(\nabla \regname\)</span>) is replaced by a denoiser.</p>
+<p>While the base class is used to implement user-defined differentiable
+priors, such as the Tikhonov regularisation, in the case of implicit priors for PnP and RED, the method
+computing the proximity operator is overwritten by a method performing denoising.</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="stubs/deepinv.optim.Prior.html#deepinv.optim.Prior" title="deepinv.optim.Prior"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deepinv.optim.Prior</span></code></a></p></td>
+<td><p>Prior term <span class="math notranslate nohighlight">\(g(x)\)</span>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="stubs/deepinv.optim.PnP.html#deepinv.optim.PnP" title="deepinv.optim.PnP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deepinv.optim.PnP</span></code></a></p></td>
+<td><p>Plug-and-play prior <span class="math notranslate nohighlight">\(\operatorname{prox}_{\gamma g}(x) = \operatorname{D}_{\sigma}(x)\)</span>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="stubs/deepinv.optim.RED.html#deepinv.optim.RED" title="deepinv.optim.RED"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deepinv.optim.RED</span></code></a></p></td>
+<td><p>Regularization-by-Denoising (RED) prior <span class="math notranslate nohighlight">\(\nabla g(x) = \operatorname{Id} - \operatorname{D}_{\sigma}(x)\)</span>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="stubs/deepinv.optim.ScorePrior.html#deepinv.optim.ScorePrior" title="deepinv.optim.ScorePrior"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deepinv.optim.ScorePrior</span></code></a></p></td>
+<td><p>Score via MMSE denoiser <span class="math notranslate nohighlight">\(\nabla g(x)=\left(x-\operatorname{D}_{\sigma}(x)\right)/\sigma^2\)</span>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="stubs/deepinv.optim.Tikhonov.html#deepinv.optim.Tikhonov" title="deepinv.optim.Tikhonov"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deepinv.optim.Tikhonov</span></code></a></p></td>
+<td><p>Tikhonov regularizer <span class="math notranslate nohighlight">\(g(x) = \frac{1}{2}\| x \|_2^2\)</span>.</p></td>
+</tr>
+</tbody>
+</table>
+<p>We refer the reader to the Denoiser section of the <a class="reference internal" href="deepinv.models.html#models"><span class="std std-ref">Models</span></a> documentation for more details on how to implement a
+denoiser.</p>
+</section>
+<section id="iterators">
+<h2>Iterators<a class="headerlink" href="#iterators" title="Link to this heading"></a></h2>
+<p>An optim iterator is an object that implements a fixed point iteration for minimizing the sum of two functions
+<span class="math notranslate nohighlight">\(F = \lambda \datafidname + \regname\)</span> where <span class="math notranslate nohighlight">\(\datafidname\)</span> is a data-fidelity term  that will be modeled by
+an instance of physics and <span class="math notranslate nohighlight">\(\regname\)</span> is a regularizer. The fixed point iteration takes the form</p>
+<div class="math notranslate nohighlight">
+\[\qquad (x_{k+1}, z_{k+1}) = \operatorname{FixedPoint}(x_k, z_k, \datafidname, \regname, A, y, ...)\]</div>
+<p>where <span class="math notranslate nohighlight">\(x\)</span> is a variable converging to the solution of the minimization problem, and
+<span class="math notranslate nohighlight">\(z\)</span> is an additional variable that may be required in the computation of the fixed point operator.</p>
+<p>The implementation of the fixed point algorithm in <code class="xref py py-meth docutils literal notranslate"><span class="pre">deepinv.optim()</span></code>,
+following standard optimization theory, is split in two steps:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}z_{k+1} = \operatorname{step}_{\datafidname}(x_k, z_k, y, A, ...)\\
+x_{k+1} = \operatorname{step}_{\regname}(x_k, z_k, y, A, ...)\end{split}\]</div>
+<p>where <span class="math notranslate nohighlight">\(\operatorname{step}_{\datafidname}\)</span> and <span class="math notranslate nohighlight">\(\operatorname{step}_g\)</span> are gradient and/or proximal steps
+on <span class="math notranslate nohighlight">\(\datafidname\)</span> and <span class="math notranslate nohighlight">\(\regname\)</span>, while using additional inputs, such as <span class="math notranslate nohighlight">\(A\)</span> and <span class="math notranslate nohighlight">\(y\)</span>, but also
+stepsizes, relaxation parameters, etc…</p>
+<p>The fStep and gStep classes precisely implement these steps.
+In the case of PnP and RED algorithms, the step on the prior term (gStep) contains
+the call to the denoiser as per defined by the user (i.e. either <span class="math notranslate nohighlight">\(\operatorname{prox}_{\regname}\)</span> or
+<span class="math notranslate nohighlight">\(\nabla \regname\)</span> are overwritten by the denoising function).</p>
+<p>We refer the reader to the Generic optimizers section of the <a class="reference internal" href="deepinv.optim.html#optim"><span class="std std-ref">Optim</span></a> documentation for more details on
+the different fixed point iterations implemented.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="stubs/deepinv.optim.optim_iterators.primal_dual_CP.gStepCP.html" class="btn btn-neutral float-left" title="gStepCP" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="deepinv.unfolded.html" class="btn btn-neutral float-right" title="Unfolded algorithms" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, DeepInv.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NSEKFKYSGR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-NSEKFKYSGR', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>

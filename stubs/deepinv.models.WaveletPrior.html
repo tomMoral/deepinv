@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WaveletPrior &mdash; deepinverse 0.1 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-binder.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-dataframe.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/sg_gallery-rendered-html.css" type="text/css" />
+    <link rel="shortcut icon" href="../_static/logo.ico"/>
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js?v=5d32c60e"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="../_static/documentation_options.js?v=2709fde1"></script>
+        <script src="../_static/doctools.js?v=888ff710"></script>
+        <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+        <script>window.MathJax = {"tex": {"equationNumbers": {"autoNumber": "AMS", "useLabelIds": true}, "macros": {"forw": ["{A\\left({#1}\\right)}", 1], "noise": ["{N\\left({#1}\\right)}", 1], "inverse": ["{R\\left({#1}\\right)}", 1], "inversef": ["{R\\left({#1},{#2}\\right)}", 2], "reg": ["{g\\left({#1}\\right)}", 1], "regname": "g", "sensor": ["{\\eta\\left({#1}\\right)}", 1], "datafid": ["{f\\left({#1},{#2}\\right)}", 2], "datafidname": "f", "distance": ["{d\\left({#1},{#2}\\right)}", 2], "distancename": "d", "denoiser": ["{\\operatorname{D}_{{#2}}\\left({#1}\\right)}", 2], "denoisername": "\\operatorname{D}", "xset": "\\mathcal{X}", "yset": "\\mathcal{Y}", "group": "\\mathcal{G}", "metric": ["{d\\left({#1},{#2}\\right)}", 2], "loss": ["{\\mathcal\\left({#1}\\right)}", 1]}}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="WaveletDict" href="deepinv.models.WaveletDict.html" />
+    <link rel="prev" title="TGV" href="deepinv.models.TGV.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: white" >
+
+          
+          
+          <a href="../index.html">
+            
+              <img src="../_static/deepinv_logolarge.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../deepinv.physics.html">Physics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deepinv.datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deepinv.utils.html">Utils</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../deepinv.models.html">Models</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="deepinv.models.ArtifactRemoval.html">ArtifactRemoval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="deepinv.models.DeepImagePrior.html">DeepImagePrior</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../deepinv.models.html#denoisers">Denoisers</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="../deepinv.models.html#classical-denoisers">Classical Denoisers</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="deepinv.models.BM3D.html">BM3D</a></li>
+<li class="toctree-l4"><a class="reference internal" href="deepinv.models.MedianFilter.html">MedianFilter</a></li>
+<li class="toctree-l4"><a class="reference internal" href="deepinv.models.TV.html">TV</a></li>
+<li class="toctree-l4"><a class="reference internal" href="deepinv.models.TGV.html">TGV</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">WaveletPrior</a></li>
+<li class="toctree-l4"><a class="reference internal" href="deepinv.models.WaveletDict.html">WaveletDict</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="../deepinv.models.html#learnable-denoisers">Learnable Denoisers</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../deepinv.loss.html">Loss</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deepinv.optim.html">Optim</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deepinv.pnp.html">PnP and RED algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deepinv.unfolded.html">Unfolded algorithms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deepinv.sampling.html">Sampling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../auto_examples/index.html">Examples</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deepinv.notation.html">Math Notation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../deepinv.contributing.html">How to Contribute</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: white" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">deepinverse</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../deepinv.models.html">Models</a></li>
+      <li class="breadcrumb-item active">WaveletPrior</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/stubs/deepinv.models.WaveletPrior.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="waveletprior">
+<h1>WaveletPrior<a class="headerlink" href="#waveletprior" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="deepinv.models.WaveletPrior">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">deepinv.models.</span></span><span class="sig-name descname"><span class="pre">WaveletPrior</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">wv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'db8'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">non_linearity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'soft'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/deepinv/models/wavdict.html#WaveletPrior"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deepinv.models.WaveletPrior" title="Link to this definition"></a></dt>
+<dd><p>Bases: <a class="reference external" href="https://pytorch.org/docs/2.0/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v2.0)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Module</span></code></a></p>
+<p>Wavelet denoising with the <span class="math notranslate nohighlight">\(\ell_1\)</span> norm.</p>
+<p>This denoiser is defined as the solution to the optimization problem:</p>
+<div class="math notranslate nohighlight">
+\[\underset{x}{\arg\min} \;  \|x-y\|^2 + \lambda \|\Psi x\|_n\]</div>
+<p>where <span class="math notranslate nohighlight">\(\Psi\)</span> is an orthonormal wavelet transform, <span class="math notranslate nohighlight">\(\lambda&gt;0\)</span> is a hyperparameter, and where
+<span class="math notranslate nohighlight">\(\|\cdot\|_n\)</span> is either the <span class="math notranslate nohighlight">\(\ell_1\)</span> norm (<code class="docutils literal notranslate"><span class="pre">non_linearity=&quot;soft&quot;</span></code>) or
+the <span class="math notranslate nohighlight">\(\ell_0\)</span> norm (<code class="docutils literal notranslate"><span class="pre">non_linearity=&quot;hard&quot;</span></code>). A variant of the <span class="math notranslate nohighlight">\(\ell_0\)</span> norm is also available
+(<code class="docutils literal notranslate"><span class="pre">non_linearity=&quot;topk&quot;</span></code>), where the thresholding is done by keeping the <span class="math notranslate nohighlight">\(k\)</span> largest coefficients
+in each wavelet subband and setting the others to zero.</p>
+<p>The solution is available in closed-form, thus the denoiser is cheap to compute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>level</strong> (<a class="reference external" href="https://docs.python.org/3.4/library/functions.html#int" title="(in Python v3.4)"><em>int</em></a>) – decomposition level of the wavelet transform</p></li>
+<li><p><strong>wv</strong> (<a class="reference external" href="https://docs.python.org/3.4/library/stdtypes.html#str" title="(in Python v3.4)"><em>str</em></a>) – mother wavelet (follows the <a class="reference external" href="https://pywavelets.readthedocs.io/en/latest/ref/wavelets.html">PyWavelets convention</a>) (default: “db8”)</p></li>
+<li><p><strong>device</strong> (<a class="reference external" href="https://docs.python.org/3.4/library/stdtypes.html#str" title="(in Python v3.4)"><em>str</em></a>) – cpu or gpu</p></li>
+<li><p><strong>non_linearity</strong> (<a class="reference external" href="https://docs.python.org/3.4/library/stdtypes.html#str" title="(in Python v3.4)"><em>str</em></a>) – <code class="docutils literal notranslate"><span class="pre">&quot;soft&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;hard&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;topk&quot;</span></code> thresholding (default: <code class="docutils literal notranslate"><span class="pre">&quot;soft&quot;</span></code>).
+If <code class="docutils literal notranslate"><span class="pre">&quot;topk&quot;</span></code>, only the top-k wavelet coefficients are kept.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="deepinv.models.WaveletPrior.forward">
+<span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/deepinv/models/wavdict.html#WaveletPrior.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deepinv.models.WaveletPrior.forward" title="Link to this definition"></a></dt>
+<dd><p>Run the model on a noisy image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference external" href="https://pytorch.org/docs/2.0/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><em>torch.Tensor</em></a>) – noisy image.</p></li>
+<li><p><strong>ths</strong> (<a class="reference external" href="https://docs.python.org/3.4/library/functions.html#int" title="(in Python v3.4)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3.4/library/functions.html#float" title="(in Python v3.4)"><em>float</em></a><em>, </em><a class="reference external" href="https://pytorch.org/docs/2.0/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><em>torch.Tensor</em></a>) – thresholding parameter.
+If <code class="docutils literal notranslate"><span class="pre">non_linearity</span></code> equals <code class="docutils literal notranslate"><span class="pre">&quot;soft&quot;</span></code> or <code class="docutils literal notranslate"><span class="pre">&quot;hard&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">ths</span></code> serves as a (soft or hard)
+thresholding parameter for the wavelet coefficients. If <code class="docutils literal notranslate"><span class="pre">non_linearity</span></code> equals <code class="docutils literal notranslate"><span class="pre">&quot;topk&quot;</span></code>,
+<code class="docutils literal notranslate"><span class="pre">ths</span></code> can indicate the number of wavelet coefficients
+that are kept (if <code class="docutils literal notranslate"><span class="pre">int</span></code>) or the proportion of coefficients that are kept (if <code class="docutils literal notranslate"><span class="pre">float</span></code>).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deepinv.models.WaveletPrior.hard_threshold_topk">
+<span class="sig-name descname"><span class="pre">hard_threshold_topk</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/deepinv/models/wavdict.html#WaveletPrior.hard_threshold_topk"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deepinv.models.WaveletPrior.hard_threshold_topk" title="Link to this definition"></a></dt>
+<dd><p>Hard thresholding of the wavelet coefficients by keeping only the top-k coefficients and setting the others to
+0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference external" href="https://pytorch.org/docs/2.0/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><em>torch.Tensor</em></a>) – wavelet coefficients.</p></li>
+<li><p><strong>ths</strong> (<a class="reference external" href="https://docs.python.org/3.4/library/functions.html#float" title="(in Python v3.4)"><em>float</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3.4/library/functions.html#int" title="(in Python v3.4)"><em>int</em></a>) – top k coefficients to keep. If <code class="docutils literal notranslate"><span class="pre">float</span></code>, it is interpreted as a proportion of the total
+number of coefficients. If <code class="docutils literal notranslate"><span class="pre">int</span></code>, it is interpreted as the number of coefficients to keep.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deepinv.models.WaveletPrior.prox_l0">
+<span class="sig-name descname"><span class="pre">prox_l0</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/deepinv/models/wavdict.html#WaveletPrior.prox_l0"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deepinv.models.WaveletPrior.prox_l0" title="Link to this definition"></a></dt>
+<dd><p>Hard thresholding of the wavelet coefficients.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference external" href="https://pytorch.org/docs/2.0/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><em>torch.Tensor</em></a>) – wavelet coefficients.</p></li>
+<li><p><strong>ths</strong> (<a class="reference external" href="https://docs.python.org/3.4/library/functions.html#float" title="(in Python v3.4)"><em>float</em></a><em>, </em><a class="reference external" href="https://pytorch.org/docs/2.0/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><em>torch.Tensor</em></a>) – threshold.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="deepinv.models.WaveletPrior.prox_l1">
+<span class="sig-name descname"><span class="pre">prox_l1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/deepinv/models/wavdict.html#WaveletPrior.prox_l1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#deepinv.models.WaveletPrior.prox_l1" title="Link to this definition"></a></dt>
+<dd><p>Soft thresholding of the wavelet coefficients.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>x</strong> (<a class="reference external" href="https://pytorch.org/docs/2.0/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><em>torch.Tensor</em></a>) – wavelet coefficients.</p></li>
+<li><p><strong>ths</strong> (<a class="reference external" href="https://docs.python.org/3.4/library/functions.html#float" title="(in Python v3.4)"><em>float</em></a><em>, </em><a class="reference external" href="https://pytorch.org/docs/2.0/tensors.html#torch.Tensor" title="(in PyTorch v2.0)"><em>torch.Tensor</em></a>) – threshold.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="examples-using-waveletprior">
+<span id="sphx-glr-backref-deepinv-models-waveletprior"></span><h2>Examples using <code class="docutils literal notranslate"><span class="pre">WaveletPrior</span></code>:<a class="headerlink" href="#examples-using-waveletprior" title="Link to this heading"></a></h2>
+<div class="sphx-glr-thumbnails"><div class="sphx-glr-thumbcontainer" tooltip="Models can be saved and loaded in the same way as in PyTorch. In this example, we show how to d..."><img alt="" src="../_images/sphx_glr_demo_loading_thumb.png" />
+<p><a class="reference internal" href="../auto_examples/basics/demo_loading.html#sphx-glr-auto-examples-basics-demo-loading-py"><span class="std std-ref">Saving and loading models</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Saving and loading models</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="This example shows how to implement the LISTA algorithm for a compressed sensing problem. In a ..."><img alt="" src="../_images/sphx_glr_demo_LISTA_thumb.png" />
+<p><a class="reference internal" href="../auto_examples/unfolded/demo_LISTA.html#sphx-glr-auto-examples-unfolded-demo-lista-py"><span class="std std-ref">Learned Iterative Soft-Thresholding Algorithm (LISTA) for compressed sensing</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Learned Iterative Soft-Thresholding Algorithm (LISTA) for compressed sensing</div>
+</div><div class="sphx-glr-thumbcontainer" tooltip="Image inpainting consists in solving y = Ax where A is a mask operator. This problem can be ref..."><img alt="" src="../_images/sphx_glr_demo_unfolded_constrained_LISTA_thumb.png" />
+<p><a class="reference internal" href="../auto_examples/unfolded/demo_unfolded_constrained_LISTA.html#sphx-glr-auto-examples-unfolded-demo-unfolded-constrained-lista-py"><span class="std std-ref">Unfolded Chambolle-Pock for constrained image inpainting</span></a></p>
+  <div class="sphx-glr-thumbnail-title">Unfolded Chambolle-Pock for constrained image inpainting</div>
+</div></div></section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="deepinv.models.TGV.html" class="btn btn-neutral float-left" title="TGV" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="deepinv.models.WaveletDict.html" class="btn btn-neutral float-right" title="WaveletDict" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, DeepInv.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+    <!-- Theme Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-NSEKFKYSGR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-NSEKFKYSGR', {
+          'anonymize_ip': false,
+      });
+    </script> 
+
+</body>
+</html>
